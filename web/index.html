@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>keengen · конфиги Keenetic / XKeen</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233aa0ff'/%3E%3Cstop offset='1' stop-color='%230064e0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='58' font-size='52' text-anchor='middle' fill='%23fff' font-family='system-ui,sans-serif' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
+  <script src="theme.js?v=1"></script>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="blob b3"></div><div class="blob b4"></div>
+  <div class="hrow">
+    <div>
+      <h1><span class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h11v12H8z"/><path d="M5 5h11v12"/><path d="M11 11h5M11 15h3"/></svg></span>keengen</h1>
+      <p class="sub" data-i18n="sub">вкладки как в XKeen-UI · язык панели (vnext) · ZIP для /opt/etc/xray/configs/</p>
+    </div>
+    <div class="clockbox" title="Местное время" data-i18n-title="clockTitle">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring" cx="50" cy="50" r="44" id="secring" stroke-dasharray="276.46" stroke-dashoffset="276.46"/>
+        <circle class="face" cx="50" cy="50" r="40"/>
+        <g id="ticks"></g>
+        <line class="hand hh" id="hh" x1="50" y1="50" x2="50" y2="28"/>
+        <line class="hand mm" id="mm" x1="50" y1="50" x2="50" y2="17"/>
+        <line class="hand ss" id="ss" x1="50" y1="56" x2="50" y2="13"/>
+        <circle class="pin" cx="50" cy="50" r="3"/>
+      </svg>
+      <div class="digi">
+        <div class="t" id="ct">--:--:--</div>
+        <div class="d" id="cd">&nbsp;</div>
+        <div class="z" data-i18n="clockz">местное время</div>
+      </div>
+    </div>
+  </div>
+  <div class="chipbar">
+  <div class="chips">
+    <button type="button" class="chip" id="themeBtn" title="тема">🎨 тема</button>
+    <a class="chip" href="howto.html" data-i18n="howto">📖 как пользоваться</a>
+    <button type="button" class="chip" id="langBtn" title="Язык">🌐 RU</button>
+  </div>
+  </div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2 data-i18n="h1">1. Ссылки и файлы</h2>
+      <p class="note" data-i18n="note1">«Прочитать с Keenetic» сразу показывает подключения в секции 2. Активное в таблице пишется в 05_routing. «Залить» / правый клик по вкладке — запись на роутер после входа. «Прочитать ссылки» — только поле ниже.</p>
+      <div class="keenetic-bar">
+        <button type="button" class="btn ghost" id="authKeenetic" data-i18n="authBtn">Настройка входа</button>
+        <button type="button" class="btn primary" id="readKeenetic" disabled data-i18n="readBtn">Прочитать с Keenetic</button>
+        <span class="keenetic-badge" id="keeneticWhere" data-i18n="whereWait">Проверяю, дома ли вы…</span>
+      </div>
+      <label for="links" data-i18n="linksLbl">Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Проверка в этот момент: битое не попадает, живые 03/04/05 не затираются.</label>
+      <textarea id="links" placeholder="vless://…#vpn-reality&#10;vless://…#vpn-tls&#10;hy2://…#vpn-hy2"></textarea>
+      <div class="drop" id="drop" tabindex="0">
+        <span data-i18n="drop">Одна настройка за раз: нажмите или перетащите QR, .txt, JSON со ссылками — или вставьте текст JSON 01–06 либо .lst (ip_exclude / port_exclude / port_proxying / xkeen). Формат распознается автоматически.</span>
+        <input id="files" type="file" accept="image/*,.txt,.json,.lst,text/plain,application/json" hidden>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="clear" data-i18n="clearBtn">Очистить поле</button>
+        <button type="button" class="btn ghost" id="parse" data-i18n="parseBtn">Прочитать ссылки</button>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </section>
+    <section class="card">
+      <h2 data-i18n="h2">2. Outbound и routing</h2>
+      <p class="hint" id="hint">Пока пусто. Вставьте ссылки или QR.</p>
+      <div class="tblwrap">
+        <table>
+          <thead><tr>
+            <th class="col-on" title="активное" data-i18n-title="thActive"><span class="vh" data-i18n="thActive">активное</span></th>
+            <th data-i18n="thName">имя</th><th data-i18n="thServer">сервер</th><th data-i18n="thProto">протокол</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="card card-preview">
+    <h2 data-i18n="hPreview">Превью файлов</h2>
+    <div class="preview-actions">
+      <button type="button" class="btn primary" id="backup" disabled data-i18n="backupBtn">Скачать все файлы разом</button>
+      <button type="button" class="btn ghost" id="applyAll" disabled data-i18n="applyAllBtn">Залить всё на Keenetic</button>
+      <span class="backup-status" id="backupStatus"></span>
+    </div>
+    <p class="preview-hint" data-i18n="previewHint">Это итоговые файлы, не черновик. Двойной щелчок копирует. Правая кнопка — скачать или залить этот файл. Правка — в поле сверху, затем «Прочитать ссылки»: проверка и замена только этой вкладки, остальные не трогаются.</p>
+    <div class="tabs" id="tabs"></div>
+    <pre id="preview">{}</pre>
+  </section>
+  <p class="footer" data-i18n="footer">keengen · конфиги для XKeen-UI · SSH только через локальный helper</p>
+
+  <div id="tabMenu" class="tab-menu" hidden aria-hidden="true">
+    <button type="button" data-act="copy" data-i18n="tabCopy">Скопировать в буфер</button>
+    <button type="button" data-act="save" data-i18n="tabSave">Скачать этот файл</button>
+    <button type="button" data-act="apply" class="warn" data-i18n="tabApply">Применить на Keenetic</button>
+  </div>
+
+  <div id="applyDlg" class="modal" hidden aria-hidden="true">
+    <div class="modal-card modal-apply" role="dialog" aria-labelledby="applyTitle">
+      <h2 id="applyTitle" data-i18n="applyTitle">Применить на Keenetic</h2>
+      <p id="applyMsg"></p>
+      <ul class="apply-list" id="applyList"></ul>
+      <p class="preview-hint" id="applyNote"></p>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="applyCancel" data-i18n="applyCancel">Отмена</button>
+        <button type="button" class="btn primary" id="applyDo" data-i18n="applyDo">Применить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mergeDlg" class="modal" hidden aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="mergeTitle">
+      <h2 id="mergeTitle" data-i18n="mergeTitle">Что сделать с 04?</h2>
+      <p id="mergeMsg" data-i18n="mergeMsg">Есть файл с роутера и новые ссылки.</p>
+      <div class="actions">
+        <button type="button" class="btn primary" id="doMerge" data-i18n="doMerge">Смержить</button>
+        <button type="button" class="btn ghost" id="doReplace" data-i18n="doReplace">Заменить</button>
+        <button type="button" class="btn ghost" id="doCancel" data-i18n="doCancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="authDlg" class="modal" hidden aria-hidden="true">
+    <div class="modal-card modal-auth" role="dialog" aria-labelledby="authTitle">
+      <h2 id="authTitle" data-i18n="authTitle">Вход на Keenetic</h2>
+      <p data-i18n="authIntro">Название, адрес, порт, логин и пароль Entware SSH. «Сохранить» проверяет вход по SSH и запоминает подключение в этом браузере. Пока вход не сохранён, «Прочитать с Keenetic» выключена. Пароль не в git и не в логи. С интернета нельзя — только из дома.</p>
+      <div id="authPickWrap" hidden>
+        <label for="authPick" data-i18n="authPick">Подключение</label>
+        <select id="authPick"></select>
+      </div>
+      <label for="authName" data-i18n="authName">Название</label>
+      <input id="authName" type="text" autocomplete="off" spellcheck="false" placeholder="дача" data-i18n-placeholder="phName">
+      <label for="authHost" data-i18n="authHost">Адрес</label>
+      <input id="authHost" type="text" autocomplete="off" spellcheck="false" placeholder="192.168.1.1">
+      <div class="auth-row">
+        <div>
+          <label for="authPort" data-i18n="authPort">Порт</label>
+          <input id="authPort" type="number" min="1" max="65535" placeholder="22">
+        </div>
+        <div>
+          <label for="authUser" data-i18n="authUser">Логин</label>
+          <input id="authUser" type="text" autocomplete="username" spellcheck="false" placeholder="root">
+        </div>
+      </div>
+      <label for="authPass" data-i18n="authPass">Пароль</label>
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="пароль Entware (пусто — ключ агента)" data-i18n-placeholder="phPass">
+      <p class="auth-err" id="authErr" hidden></p>
+      <div class="actions auth-actions">
+        <button type="button" class="btn ghost" id="authAdd" data-i18n="authAdd">Добавить</button>
+        <button type="button" class="btn ghost" id="authDel" hidden data-i18n="authDel">Удалить</button>
+        <button type="button" class="btn ghost" id="authCancel" data-i18n="authCancel">Отмена</button>
+        <button type="button" class="btn primary" id="authSave" data-i18n="authSave">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="jsQR.min.js"></script>
+  <script src="xray-outbounds.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
