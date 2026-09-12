@@ -1,6 +1,7 @@
-# keengen
+# KinGen Public
 
-Генератор конфигов **XKeen / Xray** для роутера **Keenetic**.
+Публичный автономный генератор конфигов **XKeen / Xray** для роутера **Keenetic**
+(семейство KinGen: Public — этот репозиторий, Home — homelab, не здесь).
 
 Вход: share-ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: ZIP с `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
