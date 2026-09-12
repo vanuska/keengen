@@ -2,8 +2,7 @@
 
 Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_policy` for **Keenetic** [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). Runs in the browser or as `python3 start.py` on Windows / Linux / macOS.
 
-Русский: автономный генератор конфигов **XKeen / Xray** для Keenetic. Это не панель на роутере.
-Домашний k8s-деплой — отдельный приватный git, сюда не входит.
+Русский: кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, меджа и заливки на для Keenetic. Это не панель на роутере она в работе.
 
 Вход: share-ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: ZIP с `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
@@ -67,11 +66,10 @@ python generate.py --link "vless://…" --link "hy2://…" --proxy vpn-a --out .
 Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публикует `web/`.  
 После включения Pages сайт: `https://vanuska.github.io/keengen/` — только ядро, без SSH.
 
-## Чего здесь нет
+## Чего здесь нет, но будет
 
-- Манифесты Kubernetes, oauth2-proxy, туннель
-- Привязки к чужому homelab
-- ipk на Entware (это была бы вторая панель на роутере)
+- Манифесты Kubernetes, oauth2-proxy, CF туннель.
+- ipk на Entware (вторая панель на роутере, в работе)
 
 Архитектура: [docs/architecture.md](docs/architecture.md).  
 Безопасность: [SECURITY.md](SECURITY.md).
