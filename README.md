@@ -13,6 +13,12 @@ Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_poli
 
 `https://` подписка панели **не** вход: ядро Xray URL само не тянет. Нужны строки `vless://` / `hy2://`.
 
+## Скриншоты
+
+![Ссылки и файлы](docs/screenshots/01-links.jpg)
+![Вход на Keenetic](docs/screenshots/02-login.jpg)
+![Превью и заливка](docs/screenshots/03-preview.jpg)
+
 ## Два слоя
 
 | Слой | Что | Зачем |
@@ -59,7 +65,7 @@ python generate.py --link "vless://…" --link "hy2://…" --proxy vpn-a --out .
 ## GitHub Pages
 
 Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публикует `web/`.  
-После включения Pages сайт: `https://<you>.github.io/keengen/` — только ядро, без SSH.
+После включения Pages сайт: `https://vanuska.github.io/keengen/` — только ядро, без SSH.
 
 ## Чего здесь нет
 
