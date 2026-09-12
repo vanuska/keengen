@@ -2,7 +2,10 @@
 
 Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_policy` for **Keenetic** [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). Runs in the browser or as `python3 start.py` on Windows / Linux / macOS.
 
-Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, меджа и заливки на для Keenetic. 
+Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, мёрджа конфигов и заливки их на для Keenetic.
+
+Вам нужно знать лоин, пароль и порт от Entware вы его задавали на этапе установки XKeen-UI. 
+Обычно root, keenetic, 22.
 
 Вход: ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
