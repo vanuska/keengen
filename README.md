@@ -1,7 +1,9 @@
-# keengen-public
+# keengen
 
-Публичный автономный генератор конфигов **XKeen / Xray** для роутера **Keenetic**.
-Домашний деплой (k8s, LAN) — отдельный приватный git, сюда не входит.
+Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_policy` for **Keenetic** [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). Runs in the browser or as `python3 start.py` on Windows / Linux / macOS.
+
+Русский: автономный генератор конфигов **XKeen / Xray** для Keenetic. Это не панель на роутере.
+Домашний k8s-деплой — отдельный приватный git, сюда не входит.
 
 Вход: share-ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: ZIP с `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
