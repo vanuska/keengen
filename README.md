@@ -1,7 +1,7 @@
 # keengen-public
 
 Публичный автономный генератор конфигов **XKeen / Xray** для роутера **Keenetic**.
-Сосед homelab: `C:\Users\i.matveev\dsh\keengen\keengen-home` (другой git).
+Домашний деплой (k8s, LAN) — отдельный приватный git, сюда не входит.
 
 Вход: share-ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: ZIP с `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
@@ -25,9 +25,11 @@ k8s, SSO, Cloudflare и чужие домашние сайты сюда **не �
 ```bash
 git clone https://github.com/<you>/keengen.git
 cd keengen
-python -m pip install -r requirements.txt
-python keengen.py
+python3 start.py
 ```
+
+Windows: `start.bat`. Linux/macOS: `./start.sh` (нужен `python3`; на Debian ещё `python3-venv`).
+Скрипт сам создаёт `.venv` и ставит `paramiko`. `.venv` между ОС не копируйте.
 
 Откроется [http://127.0.0.1:8765/](http://127.0.0.1:8765/).  
 `--bind` по умолчанию loopback. На `0.0.0.0` не слушайте без нужды: SSH API окажется в LAN.

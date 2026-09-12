@@ -36,8 +36,10 @@ XKeen-UI остаётся на Keenetic. keengen готовит JSON, котор
 Нужен Python 3 и `pip install -r requirements.txt` (paramiko).
 
 ```bash
-python keengen.py
+python3 start.py
 ```
+
+Или сразу `python keengen.py`, если зависимости уже стоят.
 
 В браузере только `http://127.0.0.1:8765/` (тот же origin, что API).
 
