@@ -23,7 +23,7 @@ k8s, SSO, Cloudflare и чужие домашние сайты сюда **не �
 ## Одна команда
 
 ```bash
-git clone https://github.com/<you>/keengen.git
+git clone https://github.com/vanuska/keengen.git
 cd keengen
 python3 start.py
 ```
