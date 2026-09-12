@@ -2,10 +2,10 @@
 
 Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_policy` for **Keenetic** [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). Runs in the browser or as `python3 start.py` on Windows / Linux / macOS.
 
-Русский: кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, меджа и заливки на для Keenetic. Это не панель на роутере она в работе.
+Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, меджа и заливки на для Keenetic. 
 
-Вход: share-ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
-Выход: ZIP с `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
+Вход: ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
+Выход: `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
 Несколько ссылок → несколько outbound в одном `04_outbounds.json` (как пул XKeen-UI).
 
 Это **не** панель на роутере и **не** замена [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). keengen кормит XKeen-UI готовыми файлами.
@@ -24,8 +24,6 @@ Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_poli
 |---|---|---|
 | **Ядро** `web/` | Статика, генерация **в браузере** | ZIP для XKeen-UI. Можно GitHub Pages, любой nginx, `python keengen.py` |
 | **Helper** `keengen.py` | Тот же `web/` + `/api/keenetic/*` на `127.0.0.1` | «Прочитать / Залить» по SSH **с вашего ПК** |
-
-k8s, SSO, Cloudflare и чужие домашние сайты сюда **не входят**.
 
 ## Одна команда
 
@@ -68,7 +66,6 @@ Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публи
 
 ## Чего здесь нет, но будет
 
-- Манифесты Kubernetes, oauth2-proxy, CF туннель.
 - ipk на Entware (вторая панель на роутере, в работе)
 
 Архитектура: [docs/architecture.md](docs/architecture.md).  
