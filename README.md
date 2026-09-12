@@ -4,8 +4,8 @@ Share-links (`vless://`, `hy2://`, …) → ZIP of Xray JSON `01_log`…`06_poli
 
 Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, мёрджа конфигов и заливки их на для Keenetic.
 
-Вам нужно знать лоин, пароль и порт от Entware вы его задавали на этапе установки XKeen-UI. 
-Обычно root, keenetic, 22.
+Вам нужно знать лоин, пароль и порт от Entware/dropbear, вы его задавали на этапе установки XKeen-UI. 
+Обычно: root, keenetic, 22.
 
 Вход: ссылки `vless://`, `hy2://`, `trojan://`, `vmess://`, `ss://` и QR.  
 Выход: `01_log.json` … `06_policy.json` в `/opt/etc/xray/configs/`.  
@@ -69,7 +69,7 @@ Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публи
 
 ## Чего здесь нет, но будет
 
-- ipk на Entware (вторая панель на роутере, в работе)
+- ipk на Entware/dropbear.
 
 Архитектура: [docs/architecture.md](docs/architecture.md).  
 Безопасность: [SECURITY.md](SECURITY.md).
