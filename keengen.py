@@ -376,8 +376,29 @@ def collect(auth: dict) -> dict:
     }
 
 
+def _http_bytes(url: str, timeout: int = 120) -> bytes:
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "keengen/%s" % app_version()},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = resp.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError("download-failed:%s" % exc) from exc
+    if not data:
+        raise RuntimeError("download-empty")
+    return data
+
+
 def install_ipk(auth: dict) -> dict:
-    """Download latest Entware IPK from GitHub Release and install via opkg (needs root)."""
+    """Download latest IPK on the PC (HTTPS), upload via SSH, opkg install (needs root).
+
+    Entware busybox wget often has no HTTPS — do not wget on the router.
+    """
     steps: list[dict] = []
     stamp = time.strftime("%Y%m%d-%H%M%S")
     try:
@@ -394,8 +415,8 @@ def install_ipk(auth: dict) -> dict:
         "detail": "%s %s" % (latest.get("tag"), ipk_url),
     })
 
-    def step(name: str, cmd: str, timeout: int = 40) -> tuple[int, str]:
-        code, out, err = ssh_exec(auth, cmd, timeout=timeout)
+    def step(name: str, cmd: str, timeout: int = 40, stdin: bytes | None = None) -> tuple[int, str]:
+        code, out, err = ssh_exec(auth, cmd, stdin=stdin, timeout=timeout)
         detail = (out.decode("utf-8", "replace") + ("\n" + err if err else "")).strip()
         if len(detail) > 2000:
             detail = detail[-2000:]
@@ -422,13 +443,26 @@ def install_ipk(auth: dict) -> dict:
         if code != 0:
             return {"ok": False, "error": "backup-failed", "steps": steps, "backup": bdir}
 
+    try:
+        blob = _http_bytes(ipk_url, timeout=INSTALL_TIMEOUT)
+    except RuntimeError as exc:
+        steps.append({"step": "download-pc", "ok": False, "code": 1, "detail": str(exc)})
+        return {"ok": False, "error": "download-failed", "steps": steps, "backup": bdir}
+    steps.append({
+        "step": "download-pc",
+        "ok": True,
+        "code": 0,
+        "detail": "bytes=%d (HTTPS on PC; router wget has no SSL)" % len(blob),
+    })
+
     code, _ = step(
-        "download",
-        "wget -O '%s' '%s'" % (ipk_path, ipk_url),
+        "upload",
+        "cat > '%s'" % ipk_path,
         timeout=INSTALL_TIMEOUT,
+        stdin=blob,
     )
     if code != 0:
-        return {"ok": False, "error": "download-failed", "steps": steps, "backup": bdir}
+        return {"ok": False, "error": "upload-failed", "steps": steps, "backup": bdir}
 
     # Reinstall if already present.
     step(
@@ -455,7 +489,8 @@ def install_ipk(auth: dict) -> dict:
 
     code, health = step(
         "health",
-        "sleep 1; wget -q -O - http://127.0.0.1:1001/api/health",
+        "sleep 1; wget -q -O - http://127.0.0.1:1001/api/health || "
+        "curl -fsS http://127.0.0.1:1001/api/health",
         timeout=15,
     )
     if code != 0 or "keengen" not in health:

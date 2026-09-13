@@ -150,16 +150,33 @@ func installIpkLocal() map[string]any {
 	add("backup", nil, bdir)
 
 	ipkPath := filepath.Join("/tmp", latest.name)
-	cmd := exec.Command("wget", "-O", ipkPath, latest.url)
-	out, err := cmd.CombinedOutput()
-	add("download", err, string(out))
+	client := &http.Client{Timeout: 120 * time.Second}
+	resp, err := client.Get(latest.url)
 	if err != nil {
+		add("download", err, err.Error())
 		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		add("download", fmt.Errorf("http-%d", resp.StatusCode), resp.Status)
+		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
+	}
+	f, err := os.Create(ipkPath)
+	if err != nil {
+		add("download", err, err.Error())
+		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
+	}
+	n, err := io.Copy(f, io.LimitReader(resp.Body, 32<<20))
+	_ = f.Close()
+	if err != nil {
+		add("download", err, err.Error())
+		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
+	}
+	add("download", nil, fmt.Sprintf("bytes=%d via Go https (not busybox wget)", n))
 
 	_ = exec.Command("opkg", "remove", "keengen").Run()
-	cmd = exec.Command("opkg", "install", ipkPath)
-	out, err = cmd.CombinedOutput()
+	cmd := exec.Command("opkg", "install", ipkPath)
+	out, err := cmd.CombinedOutput()
 	add("opkg-install", err, string(out))
 	if err != nil {
 		return map[string]any{"ok": false, "error": "opkg-failed", "steps": steps, "backup": bdir}

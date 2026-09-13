@@ -216,10 +216,13 @@ opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
 
 ### Уже в SSH (Dropbear)
 
-Если вы **уже** в сессии root по Dropbear Entware (порт **22**) — без `scp` с ПК: скопируйте одну строку, вставьте в терминал роутера.
+Busybox `wget` на Entware часто **без HTTPS** — one-liner через wget с GitHub не сработает.  
+Предпочтительно: кнопка в локальном UI (скачивает на ПК по HTTPS и заливает по SSH).
+
+Если на роутере есть `curl`:
 
 ```sh
-wget -O /tmp/keengen_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" && opkg install /tmp/keengen_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
+curl -fsSL -o /tmp/keengen_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" && opkg install /tmp/keengen_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
 ```
 
 Подсказка с LAN-IP (опционально):
