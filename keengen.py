@@ -39,6 +39,12 @@ ALLOWED_REMOTE = {**JSON_REMOTE, **LIST_REMOTE}
 WRITE_LIMIT = 262144
 AUTH_LIMIT = 4096
 FILE_LIMIT = 120000
+INSTALL_LIMIT = 8192
+IPK_NAME = "keengen_0.1.0-1_mipsel-3.4.ipk"
+IPK_URL = (
+    "https://github.com/vanuska/keengen/releases/download/v0.1.0/" + IPK_NAME
+)
+INSTALL_TIMEOUT = 120
 
 
 def _private_host(host: str) -> bool:
@@ -244,6 +250,97 @@ def collect(auth: dict) -> dict:
     }
 
 
+def install_ipk(auth: dict) -> dict:
+    """Download Entware IPK from GitHub Release and install via opkg (needs root)."""
+    steps: list[dict] = []
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    ipk_path = "/tmp/%s" % IPK_NAME
+
+    def step(name: str, cmd: str, timeout: int = 40) -> tuple[int, str]:
+        code, out, err = ssh_exec(auth, cmd, timeout=timeout)
+        detail = (out.decode("utf-8", "replace") + ("\n" + err if err else "")).strip()
+        if len(detail) > 2000:
+            detail = detail[-2000:]
+        steps.append({"step": name, "ok": code == 0, "code": code, "detail": detail})
+        return code, detail
+
+    # Prefer /opt/backup under root; fall back to keengen home.
+    bdir = "/opt/backup/keengen-pre-%s" % stamp
+    code, _ = step(
+        "backup",
+        "mkdir -p '%s' && cp -a /opt/etc/xray/configs '%s/' 2>/dev/null; "
+        "cp -a /opt/etc/xkeen '%s/' 2>/dev/null; "
+        "ls -la '%s' >/dev/null" % (bdir, bdir, bdir, bdir),
+        timeout=30,
+    )
+    if code != 0:
+        bdir = "/opt/home/keengen/backup/keengen-pre-%s" % stamp
+        code, _ = step(
+            "backup-fallback",
+            "mkdir -p '%s' && cp -a /opt/etc/xray/configs '%s/' 2>/dev/null; "
+            "cp -a /opt/etc/xkeen '%s/' 2>/dev/null; ls -la '%s'" % (bdir, bdir, bdir, bdir),
+            timeout=30,
+        )
+        if code != 0:
+            return {"ok": False, "error": "backup-failed", "steps": steps, "backup": bdir}
+
+    code, _ = step(
+        "download",
+        "wget -O '%s' '%s'" % (ipk_path, IPK_URL),
+        timeout=INSTALL_TIMEOUT,
+    )
+    if code != 0:
+        return {"ok": False, "error": "download-failed", "steps": steps, "backup": bdir}
+
+    # Reinstall if already present.
+    step(
+        "remove-old",
+        "opkg list-installed keengen >/dev/null 2>&1 && opkg remove keengen || true",
+        timeout=40,
+    )
+    code, detail = step(
+        "opkg-install",
+        "opkg install '%s'" % ipk_path,
+        timeout=60,
+    )
+    if code != 0:
+        print("install-ipk fail opkg: %s" % detail[:200], file=sys.stderr, flush=True)
+        return {"ok": False, "error": "opkg-failed", "steps": steps, "backup": bdir}
+
+    code, _ = step(
+        "start",
+        "/opt/etc/init.d/S99keengen stop 2>/dev/null; /opt/etc/init.d/S99keengen start",
+        timeout=20,
+    )
+    if code != 0:
+        return {"ok": False, "error": "start-failed", "steps": steps, "backup": bdir}
+
+    code, health = step(
+        "health",
+        "sleep 1; wget -q -O - http://127.0.0.1:1001/api/health",
+        timeout=15,
+    )
+    if code != 0 or "keengen" not in health:
+        return {
+            "ok": False,
+            "error": "health-failed",
+            "steps": steps,
+            "backup": bdir,
+            "ui": "http://%s:1001/" % auth["host"],
+        }
+
+    print("install-ipk ok host=%s backup=%s" % (auth["host"], bdir), file=sys.stderr, flush=True)
+    return {
+        "ok": True,
+        "where": "lan",
+        "host": auth["host"],
+        "user": auth["user"],
+        "backup": bdir,
+        "ui": "http://%s:1001/" % auth["host"],
+        "steps": steps,
+    }
+
+
 def _safe_web_path(url_path: str) -> Path | None:
     raw = unquote(url_path.split("?", 1)[0])
     if raw in ("", "/"):
@@ -327,7 +424,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        limit = WRITE_LIMIT if path.endswith("/write") else AUTH_LIMIT
+        if path.endswith("/write"):
+            limit = WRITE_LIMIT
+        elif path.endswith("/install-ipk"):
+            limit = INSTALL_LIMIT
+        else:
+            limit = AUTH_LIMIT
         body = self._read_json_body(limit)
         if body is None:
             return
@@ -367,6 +469,18 @@ class Handler(BaseHTTPRequestHandler):
                 self._ssh_error(exc)
             except Exception:
                 self._send_json(502, {"ok": False, "error": "write-failed"})
+            return
+        if path == "/api/keenetic/install-ipk":
+            try:
+                auth = parse_auth(body)
+                result = install_ipk(auth)
+                self._send_json(200 if result.get("ok") else 502, result)
+            except ValueError:
+                self._send_json(400, {"ok": False, "error": "bad-auth"})
+            except RuntimeError as exc:
+                self._ssh_error(exc)
+            except Exception:
+                self._send_json(502, {"ok": False, "error": "install-failed"})
             return
         self._send_json(404, {"ok": False, "error": "not-found"})
 

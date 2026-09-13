@@ -525,9 +525,14 @@
     m.dataset.name = name;
     m.hidden = false;
     m.setAttribute("aria-hidden", "false");
+    m.style.left = "0px";
+    m.style.top = "0px";
     const pad = 8;
-    m.style.left = Math.min(x, window.innerWidth - 220) + "px";
-    m.style.top = (y + pad) + "px";
+    const rect = m.getBoundingClientRect();
+    const left = Math.max(pad, Math.min(x, window.innerWidth - rect.width - pad));
+    const top = Math.max(pad, Math.min(y + pad, window.innerHeight - rect.height - pad));
+    m.style.left = left + "px";
+    m.style.top = top + "px";
   }
 
   function downloadOne(name) {
@@ -627,6 +632,15 @@
     syncTabClasses();
     fillPreviewBody();
     setCopyEnabled(!!state.files);
+    const pre = document.getElementById("preview");
+    if (pre && !pre.getAttribute("data-ctx")) {
+      pre.setAttribute("data-ctx", "1");
+      pre.addEventListener("contextmenu", function (e) {
+        if (!state.files || !state.preview) return;
+        e.preventDefault();
+        showTabMenu(e.clientX, e.clientY, state.preview);
+      });
+    }
   }
 
   function applyChoice(mode) {
@@ -1133,6 +1147,11 @@
     });
   }
   document.addEventListener("click", hideTabMenu);
+  // fixed menu stays on screen while content scrolls — close it
+  window.addEventListener("scroll", hideTabMenu, true);
+  window.addEventListener("wheel", hideTabMenu, { capture: true, passive: true });
+  window.addEventListener("touchmove", hideTabMenu, { capture: true, passive: true });
+  window.addEventListener("resize", hideTabMenu);
   var applyAllBtn = document.getElementById("applyAll");
   if (applyAllBtn) {
     applyAllBtn.addEventListener("click", function () {
@@ -1391,11 +1410,21 @@
     const ready = !!authGet();
     const btn = document.getElementById("readKeenetic");
     const where = document.getElementById("keeneticWhere");
+    const ipkBtn = document.getElementById("installIpk");
     if (btn) {
       btn.disabled = !keeneticLan || !ready;
       if (!keeneticLan) btn.title = t("titleAway");
       else if (!ready) btn.title = t("titleNeedAuth");
       else btn.title = t("titleRead");
+    }
+    if (ipkBtn) {
+      const auth = authGet();
+      const isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
+      ipkBtn.disabled = !keeneticLan || !ready || !isRoot;
+      if (!keeneticLan) ipkBtn.title = t("titleAway");
+      else if (!ready) ipkBtn.title = t("titleNeedAuth");
+      else if (!isRoot) ipkBtn.title = t("ipkNeedRoot");
+      else ipkBtn.title = t("ipkBtn");
     }
     if (where) {
       where.classList.toggle("lan", keeneticLan && ready);
@@ -1480,6 +1509,64 @@
   document.getElementById("authKeenetic").addEventListener("click", showAuthDlg);
   document.getElementById("authCancel").addEventListener("click", hideAuthDlg);
   document.getElementById("authSave").addEventListener("click", saveAuthForm);
+  (function () {
+    const ipkBtn = document.getElementById("installIpk");
+    const ipkStatus = document.getElementById("ipkStatus");
+    const ipkLog = document.getElementById("ipkLog");
+    if (!ipkBtn) return;
+    ipkBtn.addEventListener("click", function () {
+      if (ipkBtn.disabled) return;
+      const auth = authGet();
+      if (!auth || !keeneticLan) return;
+      if (String(auth.user || "").toLowerCase() !== "root") {
+        showErr(t("ipkNeedRoot"));
+        return;
+      }
+      if (!window.confirm(t("ipkConfirm"))) return;
+      ipkBtn.disabled = true;
+      if (ipkStatus) ipkStatus.textContent = t("ipkBusy");
+      if (ipkLog) {
+        ipkLog.hidden = true;
+        ipkLog.textContent = "";
+      }
+      fetch("/api/keenetic/install-ipk", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: auth.host,
+          port: parseInt(auth.port, 10) || 22,
+          user: auth.user,
+          password: auth.password || "",
+        }),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
+          return { r: r, j: {} };
+        });
+      }).then(function (x) {
+        const j = x.j || {};
+        if (ipkLog && j.steps && j.steps.length) {
+          ipkLog.hidden = false;
+          ipkLog.textContent = j.steps.map(function (s) {
+            return (s.ok ? "[ok] " : "[fail] ") + s.step + (s.detail ? "\n" + s.detail : "");
+          }).join("\n\n");
+        }
+        if (!x.r.ok || !j.ok) {
+          const err = j.error || ("HTTP " + x.r.status);
+          if (ipkStatus) ipkStatus.textContent = "";
+          showErr(t("ipkFail", err));
+          return;
+        }
+        showErr("");
+        if (ipkStatus) ipkStatus.textContent = t("ipkOk", j.ui || ("http://" + auth.host + ":1001/"));
+      }).catch(function (e) {
+        showErr(t("ipkFail", e && e.message ? e.message : e));
+        if (ipkStatus) ipkStatus.textContent = "";
+      }).finally(function () {
+        setKeeneticButton(keeneticLan, null);
+      });
+    });
+  })();
   document.getElementById("authAdd").addEventListener("click", function () {
     authDraft = { id: newAuthId(), name: "", host: "", port: "", user: "", password: "", ok: false };
     authEditingId = authDraft.id;

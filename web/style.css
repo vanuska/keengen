@@ -68,7 +68,9 @@ cursor:pointer;font-family:inherit;backdrop-filter:blur(24px);transition:color .
 .tab.on{background:linear-gradient(180deg,#3aa0ff,#0064e0);color:#fff;border-color:transparent;
 box-shadow:0 4px 14px rgba(0,100,224,.35)}
 .tab:not(.on):hover{color:var(--ink)}
-.preview-hint{margin:0 0 12px;color:var(--ink3);font-size:12.5px;line-height:1.45}
+.ipk-install{margin:0 0 14px;padding:12px;border:1px solid var(--glassb);border-radius:14px;background:var(--glass)}
+.ipk-title{margin:0 0 6px;font-size:15px;font-weight:700;color:var(--ink)}
+.ipk-log{margin:10px 0 0;max-height:220px;font-size:11px;display:block}
 .tab-menu{position:fixed;z-index:90;min-width:200px;padding:6px;
 background:var(--glass);border:1px solid var(--glassb);border-radius:12px;
 box-shadow:var(--shadow);backdrop-filter:blur(24px)}

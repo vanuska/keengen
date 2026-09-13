@@ -28,7 +28,20 @@ bash ipk/scripts/build-ipk.sh
 # → dist/keengen_0.1.0-1_mipsel-3.4.ipk
 ```
 
+## Формат `.ipk`
+
+Entware (bin.entware.net) ждёт **gzip(tar)** с членами
+`./debian-binary`, `./data.tar.gz`, `./control.tar.gz` — не Debian `ar`.
+В `control.tar.gz` файл называется `./control` (lowercase). Скрипт:
+[ipk/scripts/build-ipk.sh](../ipk/scripts/build-ipk.sh).
+
 ## Установка
+
+### Из локального PC-helper
+
+`POST /api/keenetic/install-ipk` (только Python helper): SSH как **root** →
+бэкап → wget Release → `opkg install` → `S99keengen start` → health `:1001`.
+В UI: секция «Установить keengen на Keenetic» после «Настройка входа».
 
 Кратко для пользователя: [README.md](../README.md) → «Установка на Keenetic (Entware IPK)».
 

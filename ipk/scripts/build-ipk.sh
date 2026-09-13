@@ -32,26 +32,37 @@ mkdir -p "$STAGE/data/opt/share/keengen"
 cp -a "$IPK/files/opt/." "$STAGE/data/opt/"
 rm -rf "$STAGE/data/opt/share/keengen/www"
 cp -a "$WEB" "$STAGE/data/opt/share/keengen/www"
+rm -f "$STAGE/data/opt/sbin/.gitkeep"
 chmod 755 "$STAGE/data/opt/etc/init.d/S99keengen" "$STAGE/data/opt/sbin/keengen-httpd" || true
 
-cp "$IPK/control/CONTROL" "$STAGE/control/CONTROL"
+# Entware opkg expects lowercase ./control inside control.tar.gz.
 SIZE=$(du -sk "$STAGE/data" | awk '{print $1}')
-printf '\nInstalled-Size: %s\n' "$SIZE" >> "$STAGE/control/CONTROL"
+{
+  tr -d '\r' < "$IPK/control/CONTROL"
+  printf '\nInstalled-Size: %s\n' "$SIZE"
+} > "$STAGE/control/control"
 
 (
   cd "$STAGE/control"
-  tar --format=ustar -czf "$STAGE/control.tar.gz" .
+  tar --format=ustar --owner=0 --group=0 -czf "$STAGE/control.tar.gz" ./control
 )
 (
   cd "$STAGE/data"
-  tar --format=ustar -czf "$STAGE/data.tar.gz" .
+  tar --format=ustar --owner=0 --group=0 -czf "$STAGE/data.tar.gz" ./opt
 )
 printf '2.0\n' > "$STAGE/debian-binary"
+
+# Entware (bin.entware.net) ships .ipk as gzip(tar), NOT Debian ar.
+# Member order and names match stock packages: ./debian-binary ./data.tar.gz ./control.tar.gz
+rm -f "$OUT"
 (
   cd "$STAGE"
-  tar --format=ustar -czf "$OUT" debian-binary control.tar.gz data.tar.gz
+  tar --format=ustar --owner=0 --group=0 -czf "$OUT" \
+    ./debian-binary ./data.tar.gz ./control.tar.gz
 )
 
 echo "built $OUT"
 ls -la "$OUT"
+file "$OUT" 2>/dev/null || true
 file "$STAGE/data/opt/sbin/keengen-httpd" 2>/dev/null || true
+python3 -c "d=open(r'''$OUT''','rb').read(2); assert d==b'\\x1f\\x8b', d"
