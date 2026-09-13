@@ -187,7 +187,7 @@ XKeen-UI не заменяется и остаётся на **:1000**. SSH с П
 Имя пакета: `keengen_0.1.0-1_mipsel-3.4.ipk`.
 
 - **Сборка из исходников** (ветка `keengen-ipk`): см. [docs/ipk.md](docs/ipk.md) — получите файл в `dist/`.
-- **GitHub Release** [v0.1.0](https://github.com/vanuska/keengen/releases/tag/v0.1.0) — `.ipk` для one-liner ниже (пока Release не опубликован; ссылка зафиксирована заранее).
+- **GitHub Release** [v0.1.0](https://github.com/vanuska/keengen/releases/tag/v0.1.0) — готовый `.ipk` для one-liner ниже.
 - Можно взять уже собранный файл у того, кто собирал пакет (тот же `keengen_0.1.0-1_mipsel-3.4.ipk`).
 
 ### Установка с ПК (scp)
@@ -206,8 +206,6 @@ opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
 ### Уже в SSH (Dropbear)
 
 Если вы **уже** в сессии root по Dropbear Entware (порт **22**) — без `scp` с ПК: скопируйте одну строку, вставьте в терминал роутера.
-
-> Release **v0.1.0** на GitHub пока не опубликован — команда заработает, когда `.ipk` появится по URL ниже. До этого — [сборка](docs/ipk.md) или готовый файл в `/tmp/`.
 
 ```sh
 wget -O /tmp/keengen_0.1.0-1_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/download/v0.1.0/keengen_0.1.0-1_mipsel-3.4.ipk" && opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start

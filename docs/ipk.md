@@ -32,7 +32,7 @@ bash ipk/scripts/build-ipk.sh
 
 Кратко для пользователя: [README.md](../README.md) → «Установка на Keenetic (Entware IPK)».
 
-**Уже в SSH (Dropbear)** — одна строка, без `scp` с ПК (Release v0.1.0 на GitHub пока не опубликован):
+**Уже в SSH (Dropbear)** — одна строка, без `scp` с ПК (Release [v0.1.0](https://github.com/vanuska/keengen/releases/tag/v0.1.0)):
 
 ```sh
 wget -O /tmp/keengen_0.1.0-1_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/download/v0.1.0/keengen_0.1.0-1_mipsel-3.4.ipk" && opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
