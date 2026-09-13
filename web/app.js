@@ -1760,8 +1760,15 @@
 
   migrateProfiles();
   fetch("/api/health", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (h) {
-    localEntware = !!(h && (h.service === "keengen-entware" || h.mode === "local"));
-  }).catch(function () { localEntware = false; }).then(function () {
+    var host = (location.hostname || "").toLowerCase();
+    var onPcHelper = location.port === "8765" || host === "127.0.0.1" || host === "localhost";
+    if (onPcHelper) {
+      localEntware = false;
+    } else {
+      localEntware = !!(h && h.service === "keengen-entware" && h.mode === "local");
+    }
+    updateAuthButton();
+  }).catch(function () { localEntware = false; updateAuthButton(); }).then(function () {
     return fetch("/api/keenetic/where", { cache: "no-store" }).then(function (r) { return r.json(); });
   }).then(function (j) {
     setKeeneticButton(j && j.where === "lan", j && j.hint);
@@ -2220,22 +2227,6 @@
       }).finally(function () {
         updateBakButtons();
         updateRollbackBtn();
-      });
-    });
-      }).then(function (x) {
-        if (!x.r.ok || !(x.j && x.j.ok)) {
-          showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));
-          if (bakStatus) bakStatus.textContent = "";
-          return;
-        }
-        showErr("");
-        if (bakStatus) bakStatus.textContent = t("bakOk");
-        refreshIpkPanel();
-      }).catch(function (e) {
-        showErr(t("bakFail", e && e.message ? e.message : e));
-        if (bakStatus) bakStatus.textContent = "";
-      }).finally(function () {
-        updateBakButtons();
       });
     });
     if (remBtn) remBtn.addEventListener("click", function () {

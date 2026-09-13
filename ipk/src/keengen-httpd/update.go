@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	appVersion     = "0.1.4"
+	appVersion     = "0.1.5"
 	githubRepo     = "vanuska/keengen"
 	ipkAssetStable = "keengen_mipsel-3.4.ipk"
 	minIpkBytes    = 50 << 10 // sanity floor for a real IPK
