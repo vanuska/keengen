@@ -25,6 +25,15 @@
       <li><strong>keengen на ПК:</strong> <code>start.bat</code> / <code>python3 start.py</code> → <code>http://127.0.0.1:8765/</code> — SSH, бэкапы, установка и снятие IPK.</li>
       <li><strong>keengen на Keenetic:</strong> IPK с GitHub Releases → <code>http://&lt;router&gt;:1001/</code> рядом с XKeen-UI на <code>:1000</code>. Restore / «Удалить IPK» — только с ПК.</li>
     </ol>
+    <h2 id="вход-пароль-или-ssh-ключ">Вход: пароль или SSH-ключ</h2>
+    <p>К роутеру по SSH — <strong>логин + пароль</strong> или <strong>логин + SSH-ключ</strong>. Это Entware SSH (Dropbear), не пароль веб-UI KeeneticOS.</p>
+    <ol class="howto">
+      <li><strong>Обычный путь:</strong> в «Настройка входа» — логин (часто <code>root</code>), пароль Entware, порт (часто <code>22</code>) → «Сохранить». Переменную <code>KEENGEN_SSH_KEY</code> заводить не нужно.</li>
+      <li><strong>Ключ:</strong> если не хотите пароль в форме или на роутере уже вход по ключу — пароль в форме <em>пустой</em>, на ПК env <code>KEENGEN_SSH_KEY</code> = полный путь к <strong>приватному</strong> ключу.</li>
+      <li><strong>Windows:</strong> <code>ssh-keygen -t ed25519 -f %USERPROFILE%\.ssh\keengen_ed25519</code> → содержимое <code>*.pub</code> в <code>authorized_keys</code> на роутере (типичный Entware Dropbear: <code>/opt/etc/dropbear/authorized_keys</code>; OpenSSH: <code>~/.ssh/authorized_keys</code>) → <code>set KEENGEN_SSH_KEY=%USERPROFILE%\.ssh\keengen_ed25519</code> до запуска <code>start.py</code>.</li>
+      <li>Пустой пароль без <code>KEENGEN_SSH_KEY</code> = ошибка входа.</li>
+    </ol>
+    <p>Подробнее в репозитории: <code>docs/howto.md</code> (раздел «Вход: пароль или SSH-ключ»).</p>
     <p><a class="chip" href="index.html">← к генератору</a></p>
   </section>
 </body>
