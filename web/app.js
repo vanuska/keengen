@@ -1447,6 +1447,7 @@
   }
 
   var bakItems = [];
+  var bakHasLastIpk = false;
 
   function backupStampFrom(j) {
     if (!j) return "";
@@ -1522,12 +1523,50 @@
       else if (!(ipkInfo && ipkInfo.router_installed)) remBtn.title = t("bakNeedPkg");
       else remBtn.title = t("tipBakRemoveIpk");
     }
+    updateRollbackBtn();
+  }
+
+  function findRollbackTarget() {
+    if (localEntware) return null;
+    for (var i = 0; i < bakItems.length; i++) {
+      if (bakItems[i].previous_ipk) {
+        return { stamp: bakItems[i].id, which: "previous" };
+      }
+    }
+    if (bakHasLastIpk) return { stamp: "", which: "last" };
+    for (var j = 0; j < bakItems.length; j++) {
+      if (bakItems[j].ipk) {
+        return { stamp: bakItems[j].id, which: "installed" };
+      }
+    }
+    return null;
+  }
+
+  function updateRollbackBtn() {
+    var btn = document.getElementById("ipkRollback");
+    if (!btn) return;
+    if (localEntware) {
+      btn.hidden = true;
+      return;
+    }
+    var auth = authGet();
+    var isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
+    var target = findRollbackTarget();
+    btn.hidden = !target;
+    btn.disabled = !keeneticLan || !isRoot || !target;
+    if (!keeneticLan) btn.title = t("titleAway");
+    else if (!auth) btn.title = t("titleNeedAuth");
+    else if (!isRoot) btn.title = t("bakNeedRoot");
+    else if (!target) btn.title = t("tipIpkRollbackNone");
+    else btn.title = t("tipIpkRollback");
   }
 
   function refreshBackupList() {
     var box = document.getElementById("ipkRestoreBox");
     if (localEntware) {
       if (box) box.hidden = true;
+      bakHasLastIpk = false;
+      updateRollbackBtn();
       return Promise.resolve();
     }
     if (box) box.hidden = false;
@@ -1535,6 +1574,7 @@
       return r.json();
     }).then(function (j) {
       bakItems = (j && j.items) || [];
+      bakHasLastIpk = !!(j && j.has_last_ipk);
       var pick = document.getElementById("backupPick");
       if (!pick) return;
       var prev = pick.value;
@@ -1558,8 +1598,10 @@
         if (prev) pick.value = prev;
       }
       updateBakButtons();
+      updateRollbackBtn();
     }).catch(function () {
       updateBakButtons();
+      updateRollbackBtn();
     });
   }
 
@@ -1569,8 +1611,8 @@
     if (!ipkBtn) return;
     const auth = authGet();
     const isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
-    const enable = localEntware ? !!keeneticLan : (!!keeneticLan && !!auth && isRoot);
-    ipkBtn.disabled = !enable;
+    const baseEnable = localEntware ? !!keeneticLan : (!!keeneticLan && !!auth && isRoot);
+    ipkBtn.disabled = !baseEnable;
     if (!keeneticLan) ipkBtn.title = t("titleAway");
     else if (!localEntware && !auth) ipkBtn.title = t("titleNeedAuth");
     else if (!localEntware && !isRoot) ipkBtn.title = t("ipkNeedRoot");
@@ -1601,7 +1643,9 @@
         if (verLine) verLine.textContent = "";
         ipkBtn.textContent = t("ipkBtn");
         ipkBtn.classList.remove("ipk-update");
+        ipkBtn.disabled = !baseEnable;
         updateBakButtons();
+        updateRollbackBtn();
         return;
       }
       ipkInfo = j;
@@ -1610,19 +1654,35 @@
       if (j.app_update && !localEntware) extra += t("ipkAppUpdate");
       if (verLine) verLine.textContent = t("ipkVer", j.local_version || "?", j.latest_version || "?", extra);
       var needUpdate = !!(j.router_installed && j.ipk_update);
+      var sameLatest = !!(j.router_installed && !j.ipk_update);
       if (needUpdate) {
         ipkBtn.textContent = t("ipkBtnUpdate", j.latest_version || "");
-      } else if (j.router_installed && !j.ipk_update) {
+        ipkBtn.disabled = !baseEnable;
+        ipkBtn.title = baseEnable ? t("tipInstallIpk") : ipkBtn.title;
+      } else if (sameLatest) {
         ipkBtn.textContent = t("ipkUpToDate", j.latest_version || j.router_version || "");
+        if (localEntware) {
+          // On :1001: no force reinstall — only from keengen on PC.
+          ipkBtn.disabled = true;
+          ipkBtn.title = t("tipIpkCurrentEntware");
+        } else {
+          // On PC: stay enabled so user can force reinstall same version.
+          ipkBtn.disabled = !baseEnable;
+          ipkBtn.title = baseEnable ? t("tipIpkReinstallPc") : ipkBtn.title;
+        }
       } else {
         ipkBtn.textContent = t("ipkBtn");
+        ipkBtn.disabled = !baseEnable;
+        if (baseEnable) ipkBtn.title = t("tipInstallIpk");
       }
       ipkBtn.classList.toggle("ipk-update", needUpdate);
       updateBakButtons();
+      updateRollbackBtn();
     }).catch(function () {
       ipkInfo = null;
       ipkBtn.classList.remove("ipk-update");
       updateBakButtons();
+      updateRollbackBtn();
     });
   }
   function saveAuthForm() {
@@ -1731,7 +1791,9 @@
           return;
         }
       }
-      if (!window.confirm(t("ipkConfirm"))) return;
+      var sameVer = !!(ipkInfo && ipkInfo.router_installed && !ipkInfo.ipk_update);
+      var confirmMsg = (!localEntware && sameVer) ? t("ipkConfirmSame") : t("ipkConfirm");
+      if (!window.confirm(confirmMsg)) return;
       ipkBtn.disabled = true;
       showErr("");
       showIpkErr("");
@@ -2067,6 +2129,65 @@
         return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
           return { r: r, j: {} };
         });
+      }).then(function (x) {
+        if (!x.r.ok || !(x.j && x.j.ok)) {
+          showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));
+          if (bakStatus) bakStatus.textContent = "";
+          return;
+        }
+        showErr("");
+        if (bakStatus) bakStatus.textContent = t("bakOk");
+        refreshIpkPanel();
+      }).catch(function (e) {
+        showErr(t("bakFail", e && e.message ? e.message : e));
+        if (bakStatus) bakStatus.textContent = "";
+      }).finally(function () {
+        updateBakButtons();
+      });
+    });
+    var rollbackBtn = document.getElementById("ipkRollback");
+    if (rollbackBtn) rollbackBtn.addEventListener("click", function () {
+      if (rollbackBtn.disabled || localEntware) return;
+      var target = findRollbackTarget();
+      if (!target) return;
+      var auth = bakAuthOrFail();
+      if (!auth) return;
+      var label = target.which === "last"
+        ? "last-installed.ipk"
+        : (target.stamp + " / " + target.which);
+      if (!window.confirm(t("ipkConfirmRollback", label))) return;
+      if (bakStatus) bakStatus.textContent = t("bakBusy");
+      rollbackBtn.disabled = true;
+      fetch("/api/backups/restore-ipk", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({
+          stamp: target.stamp || "",
+          which: target.which,
+        }, auth)),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
+          return { r: r, j: {} };
+        });
+      }).then(function (x) {
+        if (!x.r.ok || !(x.j && x.j.ok)) {
+          showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));
+          if (bakStatus) bakStatus.textContent = "";
+          return;
+        }
+        showErr("");
+        if (bakStatus) bakStatus.textContent = t("bakOk");
+        refreshIpkPanel();
+        refreshBackupList();
+      }).catch(function (e) {
+        showErr(t("bakFail", e && e.message ? e.message : e));
+        if (bakStatus) bakStatus.textContent = "";
+      }).finally(function () {
+        updateBakButtons();
+        updateRollbackBtn();
+      });
+    });
       }).then(function (x) {
         if (!x.r.ok || !(x.j && x.j.ok)) {
           showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));

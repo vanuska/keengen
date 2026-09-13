@@ -72,6 +72,7 @@
         <p class="preview-hint" id="ipkVerLine"></p>
         <div class="actions">
           <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn" title="Скачать latest IPK с GitHub, сделать бэкап и установить/обновить keengen на роутере" data-i18n-title="tipInstallIpk">Установить IPK на роутер</button>
+          <button type="button" class="btn ghost" id="ipkRollback" hidden disabled data-i18n="ipkRollback" title="Откатить на предыдущий IPK из локального слепка backups/" data-i18n-title="tipIpkRollback">Откатить на предыдущий IPK</button>
           <span class="backup-status" id="ipkStatus"></span>
           <a id="ipkUiLink" hidden target="_blank" rel="noopener" data-i18n="ipkOpenUi">Открыть UI на :1001</a>
         </div>
@@ -84,7 +85,7 @@
             <details class="info-tip">
               <summary data-i18n-title="infoTip" data-i18n-aria="infoTip" aria-label="Подсказка" title="Подсказка">i</summary>
               <div class="info-tip-panel">
-                <p data-i18n="bakHint">Бэкап конфигов делается всегда при «Прочитать» и при установке IPK. Слепки лежат в backups/ на этом ПК. Restore — только с ПК под root SSH.</p>
+                <p data-i18n="bakHint">Бэкап конфигов делается всегда при «Прочитать» и при установке IPK. Слепки лежат в backups/ на этом ПК. «Restore IPK» / «Откатить…» — откат на IPK из слепка (previous-ipk), только с ПК под root SSH.</p>
               </div>
             </details>
           </div>
@@ -93,7 +94,7 @@
           <div class="actions" style="margin-top:10px">
             <button type="button" class="btn ghost" id="bakRefresh" data-i18n="bakRefresh" title="Перечитать папку backups/ на этом ПК и обновить выпадающий список слепков" data-i18n-title="tipBakRefresh">Обновить список бэкапов</button>
             <button type="button" class="btn primary" id="bakRestoreCfg" disabled data-i18n="bakRestoreCfg" title="Восстановить конфиги XKeen из выбранного слепка на роутер" data-i18n-title="tipBakRestoreCfg">Restore конфиги</button>
-            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk" title="Откатить IPK keengen из выбранного слепка на роутер" data-i18n-title="tipBakRestoreIpk">Restore IPK</button>
+            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk" title="Откат на IPK из выбранного слепка (previous-ipk или installed)" data-i18n-title="tipBakRestoreIpk">Откатить IPK</button>
             <button type="button" class="btn ghost" id="bakRemoveIpk" disabled data-i18n="bakRemoveIpk" title="Удалить пакет keengen с роутера (opkg remove; сначала бэкап)" data-i18n-title="tipBakRemoveIpk">Удалить IPK</button>
           </div>
           <span class="backup-status" id="bakStatus"></span>
