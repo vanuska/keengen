@@ -1,6 +1,6 @@
 # keengen IPK (Entware)
 
-Пакет **0.1.0-1** для `mipsel-3.4`: статика + `keengen-httpd` (ветка **`main`**).
+Пакет **0.1.0-2** для `mipsel-3.4`: статика + `keengen-httpd` (ветка **`main`**).
 
 Подробности: [docs/ipk.md](../docs/ipk.md). Исходник helper: [src/](src/).
 
@@ -14,6 +14,6 @@ cd ../../..
 bash ipk/scripts/build-ipk.sh
 ```
 
-Артефакт: `dist/keengen_0.1.0-1_mipsel-3.4.ipk` (в git не кладётся).
+Артефакт: `dist/keengen_0.1.0-2_mipsel-3.4.ipk` (в git не кладётся).
 
 На роутер ставить только по явному приказу (шаг 2).

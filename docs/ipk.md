@@ -4,7 +4,7 @@
 
 > Официальный Release IPK — только **mipsel-3.4** (проверено на Keenetic Hopper). Другие arch (например aarch64-3.10) не в Release и не тестировались. Проверка установки на конкретном устройстве — у владельца роутера; в CI железа нет.
 
-## Что в пакете `0.1.0-1`
+## Что в пакете `0.1.0-2`
 
 | Часть | Путь на роутере |
 |---|---|
@@ -30,7 +30,7 @@ GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
   go build -trimpath -ldflags='-s -w' -o ../../files/opt/sbin/keengen-httpd .
 cd ../../..
 bash ipk/scripts/build-ipk.sh
-# → dist/keengen_0.1.0-1_mipsel-3.4.ipk
+# → dist/keengen_0.1.0-2_mipsel-3.4.ipk
 # → dist/keengen_mipsel-3.4.ipk  (то же содержимое, стабильное имя для latest)
 ```
 
@@ -72,9 +72,9 @@ opkg install /tmp/keengen_mipsel-3.4.ipk
 
 ### Переустановка той же версии
 
-Если Release пересобран с тем же тегом/версией (`0.1.0-1`), Entware может
-считать пакет уже установленным. С ПК: «Удалить IPK», затем снова установка
-с кнопки; или вручную `opkg remove keengen` и снова `opkg install …`.
+Пакет **0.1.0-2** (revision) заставляет opkg переустановить файлы даже после
+пересборки того же тега `v0.1.0`. Если всё же «уже установлено»: с ПК «Удалить IPK»,
+затем снова установка; или `opkg remove keengen` и `opkg install …`.
 
 Если `S99keengen start` пишет `not found`, а файл на месте — в init-скрипте
 были CRLF (исправлено в сборке IPK). Нужна переустановка пакета с актуального

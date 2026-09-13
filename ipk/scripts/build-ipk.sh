@@ -11,7 +11,7 @@ DIST="$ROOT/dist"
 STAGE="$DIST/stage"
 BIN_SRC="$IPK/files/opt/sbin/keengen-httpd"
 PKG_NAME=keengen
-PKG_VER=0.1.0-1
+PKG_VER=0.1.0-2
 ARCH=mipsel-3.4
 OUT="$DIST/${PKG_NAME}_${PKG_VER}_${ARCH}.ipk"
 
@@ -35,7 +35,10 @@ cp -a "$WEB" "$STAGE/data/opt/share/keengen/www"
 rm -f "$STAGE/data/opt/sbin/.gitkeep"
 # Entware rejects shebangs with CR (#!/bin/sh\r → "not found"). Strip CR from scripts.
 find "$STAGE/data" \( -path '*/init.d/*' -o -name '*.sh' \) -type f -exec sed -i 's/\r$//' {} +
-chmod 755 "$STAGE/data/opt/etc/init.d/S99keengen" "$STAGE/data/opt/sbin/keengen-httpd" || true
+# Match stock Entware modes (dirs/exec 755, data files 644).
+find "$STAGE/data" -type d -exec chmod 755 {} +
+find "$STAGE/data" -type f -exec chmod 644 {} +
+chmod 755 "$STAGE/data/opt/etc/init.d/S99keengen" "$STAGE/data/opt/sbin/keengen-httpd"
 
 # Entware opkg expects lowercase ./control inside control.tar.gz.
 SIZE=$(du -sk "$STAGE/data" | awk '{print $1}')
@@ -48,10 +51,34 @@ SIZE=$(du -sk "$STAGE/data" | awk '{print $1}')
   cd "$STAGE/control"
   tar --format=ustar --owner=0 --group=0 -czf "$STAGE/control.tar.gz" ./control
 )
-(
-  cd "$STAGE/data"
-  tar --format=ustar --owner=0 --group=0 -czf "$STAGE/data.tar.gz" ./opt
-)
+# Pack data.tar.gz with explicit Unix modes (Windows/Git Bash chmod is unreliable for ELF).
+rm -f "$STAGE/data.tar.gz"
+STAGE_DATA="$STAGE/data" STAGE_OUT="$STAGE/data.tar.gz" python3 - <<'PY'
+import os
+import tarfile
+from pathlib import Path
+
+stage = Path(os.environ["STAGE_DATA"])
+out = Path(os.environ["STAGE_OUT"])
+exec_names = {"keengen-httpd", "S99keengen"}
+
+def fix_mode(ti: tarfile.TarInfo):
+    name = ti.name.rstrip("/")
+    base = name.rsplit("/", 1)[-1]
+    ti.uid = ti.gid = 0
+    ti.uname = ti.gname = ""
+    if ti.isdir():
+        ti.mode = 0o755
+    elif base in exec_names or name.endswith(".sh"):
+        ti.mode = 0o755
+    else:
+        ti.mode = 0o644
+    return ti
+
+with tarfile.open(out, "w:gz", format=tarfile.USTAR_FORMAT) as tar:
+    tar.add(str(stage), arcname=".", recursive=True, filter=fix_mode)
+print("packed", out, "bytes", out.stat().st_size)
+PY
 printf '2.0\n' > "$STAGE/debian-binary"
 
 # Entware (bin.entware.net) ships .ipk as gzip(tar), NOT Debian ar.
@@ -70,4 +97,4 @@ cp -f "$OUT" "$STABLE"
 ls -la "$OUT" "$STABLE"
 file "$OUT" 2>/dev/null || true
 file "$STAGE/data/opt/sbin/keengen-httpd" 2>/dev/null || true
-python3 -c "d=open(r'''$OUT''','rb').read(2); assert d==b'\\x1f\\x8b', d"
+OUT_IPK="$OUT" python3 -c "import os; d=open(os.environ['OUT_IPK'],'rb').read(2); assert d==b'\\x1f\\x8b', d"

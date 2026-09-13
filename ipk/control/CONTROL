@@ -1,5 +1,5 @@
 Package: keengen
-Version: 0.1.0-1
+Version: 0.1.0-2
 Depends:
 Section: net
 Architecture: mipsel-3.4

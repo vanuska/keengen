@@ -148,7 +148,7 @@ def check_updates(auth: dict | None = None) -> dict:
                 if rv:
                     out["router_version"] = rv
             except json.JSONDecodeError:
-                # opkg list-installed: "keengen - 0.1.0-1"
+                # opkg list-installed: "keengen - 0.1.0-2"
                 if "keengen" in text:
                     parts = text.replace("-", " ").split()
                     for p in parts:
@@ -477,23 +477,69 @@ def _save_local_backup_meta(stamp: str, **extra: object) -> Path:
     return path
 
 
+def _sftp_download_tree(sftp, remote: str, local: Path) -> int:
+    """Recursively download remote dir via SFTP. Returns file count."""
+    import stat as _stat
+
+    local.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for entry in sftp.listdir_attr(remote):
+        name = entry.filename
+        if name in (".", ".."):
+            continue
+        rpath = remote.rstrip("/") + "/" + name
+        lpath = local / name
+        if _stat.S_ISDIR(entry.st_mode):
+            count += _sftp_download_tree(sftp, rpath, lpath)
+        elif _stat.S_ISREG(entry.st_mode):
+            sftp.get(rpath, str(lpath))
+            count += 1
+    return count
+
+
 def pull_router_backup(auth: dict, remote_dir: str, stamp: str) -> tuple[bool, str]:
-    """Tar remote backup dir to local backups/<stamp>/configs.tgz."""
-    q = remote_dir.replace("'", "'\\''")
-    # Marker so busybox tar never sees a fully empty tree; stderr kept separate from gzip stream.
-    code, body, err = ssh_exec(
-        auth,
-        "touch '%s/.keengen-backup' && tar -czf - -C '%s' ." % (q, q),
-        timeout=90,
-    )
-    # BusyBox tar may exit non-zero on warnings; accept a valid gzip payload.
-    if len(body) < 20 or not body.startswith(b"\x1f\x8b"):
-        return False, err or ("empty-tar" if not body else "not-gzip")
-    dest = _backup_dir(stamp) / "configs.tgz"
-    dest.write_bytes(body)
-    if code != 0 and err:
-        return True, "%s (tar-exit=%s: %s)" % (dest, code, err[:200])
-    return True, str(dest)
+    """SFTP-download remote backup dir; pack configs.tgz on the PC (BusyBox tar has no -c)."""
+    import tarfile
+
+    dest_dir = _backup_dir(stamp)
+    tree_dir = dest_dir / "router-tree"
+    if tree_dir.exists():
+        import shutil
+
+        shutil.rmtree(tree_dir, ignore_errors=True)
+    tree_dir.mkdir(parents=True, exist_ok=True)
+
+    client = _ssh_client(auth)
+    try:
+        sftp = client.open_sftp()
+        try:
+            try:
+                sftp.stat(remote_dir)
+            except OSError as exc:
+                return False, "remote-missing:%s" % exc
+            # Marker file so empty trees still produce a valid archive.
+            marker = remote_dir.rstrip("/") + "/.keengen-backup"
+            try:
+                with sftp.file(marker, "w") as fh:
+                    fh.write(b"")
+            except OSError:
+                pass
+            nfiles = _sftp_download_tree(sftp, remote_dir, tree_dir)
+        finally:
+            sftp.close()
+    except Exception as exc:  # noqa: BLE001 — surface any SFTP/SSH failure to caller
+        return False, "sftp-failed:%s" % exc
+    finally:
+        client.close()
+
+    tgz = dest_dir / "configs.tgz"
+    with tarfile.open(tgz, "w:gz", format=tarfile.USTAR_FORMAT) as tar:
+        # Archive contents of router-tree (configs/, xkeen/, …) at archive root.
+        for child in sorted(tree_dir.iterdir()):
+            tar.add(child, arcname=child.name)
+    if not tgz.is_file() or tgz.stat().st_size < 20:
+        return False, "empty-local-tgz"
+    return True, "%s (files=%d)" % (tgz, nfiles)
 
 
 def list_local_backups() -> dict:
@@ -703,15 +749,16 @@ def install_ipk(auth: dict) -> dict:
             "local_backup": stamp,
         }
 
-    # Reinstall if already present.
+    # Remove first so a same-version rebuild cannot leave a half-installed tree.
     step(
         "remove-old",
-        "opkg list-installed keengen >/dev/null 2>&1 && opkg remove keengen || true",
+        "opkg list-installed keengen >/dev/null 2>&1 && opkg remove keengen || true; "
+        "rm -rf /opt/share/keengen /opt/sbin/keengen-httpd /opt/etc/init.d/S99keengen",
         timeout=40,
     )
     code, detail = step(
         "opkg-install",
-        "opkg install '%s'" % ipk_path,
+        "opkg install --force-reinstall --force-overwrite '%s'" % ipk_path,
         timeout=60,
     )
     if code != 0:
@@ -720,6 +767,22 @@ def install_ipk(auth: dict) -> dict:
         return {
             "ok": False,
             "error": "opkg-failed",
+            "steps": steps,
+            "backup": bdir,
+            "local_backup": stamp,
+        }
+
+    code, detail = step(
+        "verify-www",
+        "test -d /opt/share/keengen/www && test -f /opt/share/keengen/www/index.html && "
+        "test -x /opt/sbin/keengen-httpd && ls -la /opt/share/keengen/www",
+        timeout=15,
+    )
+    if code != 0:
+        _save_local_backup_meta(stamp, router_backup=bdir, latest_tag=latest.get("tag"), failed="verify-www")
+        return {
+            "ok": False,
+            "error": "www-missing",
             "steps": steps,
             "backup": bdir,
             "local_backup": stamp,
