@@ -1490,8 +1490,10 @@
     }
     if (remBtn) {
       remBtn.hidden = false;
-      remBtn.disabled = !keeneticLan || !isRoot;
-      remBtn.title = !isRoot ? t("bakNeedRoot") : "";
+      remBtn.disabled = !keeneticLan || !isRoot || !(ipkInfo && ipkInfo.router_installed);
+      if (!isRoot) remBtn.title = t("bakNeedRoot");
+      else if (!(ipkInfo && ipkInfo.router_installed)) remBtn.title = t("bakNeedPkg");
+      else remBtn.title = "";
     }
   }
 
@@ -1567,12 +1569,14 @@
     }
 
     req.then(function (r) { return r.json(); }).then(function (j) {
-      ipkInfo = j || null;
       if (!j || !j.ok) {
+        ipkInfo = null;
         if (verLine) verLine.textContent = "";
         ipkBtn.textContent = t("ipkBtn");
+        updateBakButtons();
         return;
       }
+      ipkInfo = j;
       var extra = "";
       if (j.router_version) extra += t("ipkVerRouter", j.router_version);
       if (j.app_update && !localEntware) extra += t("ipkAppUpdate");
@@ -1584,7 +1588,11 @@
       } else {
         ipkBtn.textContent = t("ipkBtn");
       }
-    }).catch(function () { /* ignore */ });
+      updateBakButtons();
+    }).catch(function () {
+      ipkInfo = null;
+      updateBakButtons();
+    });
   }
   function saveAuthForm() {
     const f = readAuthForm();
