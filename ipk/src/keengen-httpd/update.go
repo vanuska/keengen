@@ -53,7 +53,7 @@ func handleUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		"latest_tag":       latest.tag,
 		"ipk_url":          latest.url,
 		"ipk_name":         latest.name,
-		"app_update":       verKnown && verLess(appVersion, latest.version),
+		"app_update":       false, // PC-only hint; never show standalone/git tip on :1001
 		"ipk_update":       verKnown && verLess(appVersion, latest.version),
 		"router_installed": true,
 		"resolve_source":   latest.source,

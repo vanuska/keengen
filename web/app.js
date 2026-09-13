@@ -1649,10 +1649,18 @@
         return;
       }
       ipkInfo = j;
-      var extra = "";
-      if (j.router_version) extra += t("ipkVerRouter", j.router_version);
-      if (j.app_update && !localEntware) extra += t("ipkAppUpdate");
-      if (verLine) verLine.textContent = t("ipkVer", j.local_version || "?", j.latest_version || "?", extra);
+      if (verLine) {
+        if (localEntware) {
+          // On :1001 local_version == package on router — no «локально», no standalone hint.
+          var entVer = j.router_version || j.local_version || "?";
+          verLine.textContent = t("ipkVerEntware", entVer, j.latest_version || "?");
+        } else {
+          var routerBit = j.router_version || "—";
+          var extra = "";
+          if (j.app_update) extra += t("ipkAppUpdate");
+          verLine.textContent = t("ipkVerPc", j.local_version || "?", j.latest_version || "?", routerBit, extra);
+        }
+      }
       var needUpdate = !!(j.router_installed && j.ipk_update);
       var sameLatest = !!(j.router_installed && !j.ipk_update);
       if (needUpdate) {
