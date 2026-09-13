@@ -42,6 +42,17 @@
 
 ## Быстрый старт (keengen на ПК)
 
+### Windows — без git, для обычных пользователей
+
+Разбирать все папки в архиве не нужно: достаточно `start.bat`.
+
+1. Один раз установите **Python** с [python.org](https://www.python.org/downloads/) — при установке включите **Add python.exe to PATH**.
+2. Откройте [github.com/vanuska/keengen](https://github.com/vanuska/keengen) → кнопка **Code** → **Download ZIP** → распакуйте архив куда удобно.
+3. В распакованной папке дважды щёлкните **`start.bat`**. Откроется браузер: [http://127.0.0.1:8765/](http://127.0.0.1:8765/) — это **keengen на ПК**.
+4. По желанию: в UI «**Настройка входа**» → логин **root** → дальше можно читать конфиги с роутера и ставить/обновлять **IPK**.
+
+### Через git / Linux / macOS
+
 ```bash
 git clone https://github.com/vanuska/keengen.git
 cd keengen
