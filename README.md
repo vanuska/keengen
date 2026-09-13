@@ -13,9 +13,9 @@
 ## Скриншоты
 
 <p align="center">
-  <img src="docs/screenshots/01-links.jpg" width="260" alt="Ссылки и файлы">
-  <img src="docs/screenshots/02-login.jpg" width="260" alt="Настройка входа SSH">
-  <img src="docs/screenshots/03-preview.jpg" width="260" alt="Превью и заливка">
+  <img src="docs/screenshots/01-links-v2.jpg" width="260" alt="Ссылки и файлы">
+  <img src="docs/screenshots/02-login-v2.jpg" width="260" alt="Настройка входа SSH">
+  <img src="docs/screenshots/03-preview-v2.jpg" width="260" alt="Превью и заливка">
 </p>
 
 1. Вставка ссылок / QR / JSON · «Прочитать с Keenetic»  
@@ -23,7 +23,7 @@
 3. Превью вкладок 01–06 и списков · заливка на роутер  
 
 <p align="center">
-  <img src="docs/screenshots/tour.gif" width="520" alt="Обзор интерфейса keengen">
+  <img src="docs/screenshots/tour-v2.gif" width="520" alt="Обзор интерфейса keengen">
 </p>
 
 <p align="center"><em>обзор интерфейса</em></p>
