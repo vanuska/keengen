@@ -300,7 +300,7 @@
 
   function setCopyEnabled(on) {
     const hasFiles = !!state.files;
-    const ready = typeof authGet === "function" ? !!authGet() : false;
+    const ready = (typeof authGet === "function" && !!authGet()) || !!localEntware;
     const backup = document.getElementById("backup");
     if (backup) backup.disabled = !hasFiles;
     const applyAll = document.getElementById("applyAll");
@@ -1036,7 +1036,7 @@
   }
 
   function openApplyDlg(names) {
-    if (!keeneticLan || !authGet()) {
+    if (!keeneticLan || (!authGet() && !localEntware)) {
       showAuthDlg();
       showErr(t("needAuth"));
       return;
@@ -1075,7 +1075,7 @@
   }
 
   function applyToKeenetic() {
-    const a = authGet();
+    const a = authPayload();
     const doBtn = document.getElementById("applyDo");
     if (!a || !applyNames.length || !state.files) {
       hideApplyDlg();
@@ -1674,10 +1674,26 @@
       }
     });
   });
+  function authPayload() {
+    const a = authGet();
+    if (a) {
+      return {
+        host: a.host,
+        port: parseInt(a.port, 10) || 22,
+        user: a.user,
+        password: a.password || "",
+      };
+    }
+    if (localEntware) {
+      return { host: "127.0.0.1", port: 22, user: "local", password: "" };
+    }
+    return null;
+  }
+
   document.getElementById("readKeenetic").addEventListener("click", function () {
     const btn = document.getElementById("readKeenetic");
     if (!keeneticLan || btn.disabled) return;
-    const a = authGet();
+    const a = authPayload();
     if (!a) {
       showAuthDlg();
       showErr(t("needAuth"));
@@ -1689,12 +1705,7 @@
       method: "POST",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        host: a.host,
-        port: parseInt(a.port, 10) || 22,
-        user: a.user,
-        password: a.password,
-      }),
+      body: JSON.stringify(a),
     }).then(function (r) {
       return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
         return { r: r, j: {} };
