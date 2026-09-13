@@ -33,6 +33,8 @@ cp -a "$IPK/files/opt/." "$STAGE/data/opt/"
 rm -rf "$STAGE/data/opt/share/keengen/www"
 cp -a "$WEB" "$STAGE/data/opt/share/keengen/www"
 rm -f "$STAGE/data/opt/sbin/.gitkeep"
+# Entware rejects shebangs with CR (#!/bin/sh\r → "not found"). Strip CR from scripts.
+find "$STAGE/data" \( -path '*/init.d/*' -o -name '*.sh' \) -type f -exec sed -i 's/\r$//' {} +
 chmod 755 "$STAGE/data/opt/etc/init.d/S99keengen" "$STAGE/data/opt/sbin/keengen-httpd" || true
 
 # Entware opkg expects lowercase ./control inside control.tar.gz.

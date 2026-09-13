@@ -480,15 +480,19 @@ def _save_local_backup_meta(stamp: str, **extra: object) -> Path:
 def pull_router_backup(auth: dict, remote_dir: str, stamp: str) -> tuple[bool, str]:
     """Tar remote backup dir to local backups/<stamp>/configs.tgz."""
     q = remote_dir.replace("'", "'\\''")
+    # Marker so busybox tar never sees a fully empty tree; stderr kept separate from gzip stream.
     code, body, err = ssh_exec(
         auth,
-        "tar -czf - -C '%s' . 2>/dev/null" % q,
+        "touch '%s/.keengen-backup' && tar -czf - -C '%s' ." % (q, q),
         timeout=90,
     )
-    if code != 0 or len(body) < 20:
-        return False, err or "empty-tar"
+    # BusyBox tar may exit non-zero on warnings; accept a valid gzip payload.
+    if len(body) < 20 or not body.startswith(b"\x1f\x8b"):
+        return False, err or ("empty-tar" if not body else "not-gzip")
     dest = _backup_dir(stamp) / "configs.tgz"
     dest.write_bytes(body)
+    if code != 0 and err:
+        return True, "%s (tar-exit=%s: %s)" % (dest, code, err[:200])
     return True, str(dest)
 
 
