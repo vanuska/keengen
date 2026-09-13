@@ -28,22 +28,28 @@ bash ipk/scripts/build-ipk.sh
 # → dist/keengen_0.1.0-1_mipsel-3.4.ipk
 ```
 
-## Установка (шаг 2 — по приказу, не автоматом)
+## Установка
+
+Кратко для пользователя: [README.md](../README.md) → «Установка на Keenetic (Entware IPK)».
 
 ```sh
 # с ПК, пример:
-scp dist/keengen_0.1.0-1_mipsel-3.4.ipk keengen@192.168.3.20:/tmp/
-ssh keengen@192.168.3.20
+scp dist/keengen_0.1.0-1_mipsel-3.4.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1
 opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
 /opt/etc/init.d/S99keengen start
-# браузер: http://192.168.3.20:1001/
+# браузер: http://<LAN-IP>:1001/
 ```
 
-В UI: «Настройка входа» → Save (в local-режиме probe всегда ок) → «Прочитать с Keenetic».
+В UI: «Настройка входа» → Save (local-режим: probe без SSH) → «Прочитать» / «Залить».
+Бэкап перед записью: `/tmp/keengen-backup-*`. XKeen-UI на `:1000` не трогаем.
 
-Снятие: ` /opt/etc/init.d/S99keengen stop && opkg remove keengen `
+```sh
+/opt/etc/init.d/S99keengen stop
+opkg remove keengen
+```
 
 ## Безопасность
 
 Не публиковать `:1001` в интернет. WAN-фильтр Keenetic держать закрытым.
-Запись конфигов и restart — с LAN. См. [SECURITY.md](../SECURITY.md).
+Перед Apply — бэкап; запись конфигов и restart — с LAN. См. [SECURITY.md](../SECURITY.md).

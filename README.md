@@ -168,17 +168,67 @@ python generate.py --link "vless://…" --link "hy2://…" --proxy vpn-a --out .
 Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публикует `web/`.  
 После включения Pages сайт: `https://vanuska.github.io/keengen/` — только ядро, без SSH.
 
-## Чего здесь нет, но будет
+## Установка на Keenetic (Entware IPK)
 
-- ipk на Entware/dropbear.
+Пакет ставит на роутер тот же UI + helper `keengen-httpd` (порт **1001**).  
+XKeen-UI не заменяется и остаётся на **:1000**. SSH с ПК не нужен: helper читает и пишет локальные файлы на самом роутере.
+
+Подробности сборки и путей: [docs/ipk.md](docs/ipk.md) (ветка `keengen-ipk`).
+
+### Что нужно
+
+- Keenetic с **Entware** на USB/`/opt` (место под пакет ~2 МБ + рабочие файлы).
+- Архитектура Entware **mipsel-3.4** (наш готовый пакет собран под неё; другие arch — своя сборка).
+- Уже установлен **XKeen** (конфиги в `/opt/etc/xray/configs`, списки в `/opt/etc/xkeen`).
+- SSH **Dropbear** Entware (обычно порт **22**, не KeeneticOS `:2222`).
+
+### Откуда взять `.ipk`
+
+Имя пакета: `keengen_0.1.0-1_mipsel-3.4.ipk`.
+
+- **Сборка из исходников** (ветка `keengen-ipk`): см. [docs/ipk.md](docs/ipk.md) — получите файл в `dist/`.
+- Когда появится **GitHub Release** / артефакт на зеркале — скачайте оттуда тот же `.ipk`.
+- Можно взять уже собранный файл у того, кто собирал пакет (тот же `keengen_0.1.0-1_mipsel-3.4.ipk`).
+
+### Установка
+
+С ПК (подставьте LAN-IP роутера и путь к файлу):
+
+```sh
+scp keengen_0.1.0-1_mipsel-3.4.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1
+opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
+/opt/etc/init.d/S99keengen start
+```
+
+В браузере: `http://<LAN-IP>:1001/`
+
+### Первый заход в UI
+
+1. «Настройка входа» → **Save** (local-режим: probe не проверяет SSH-логин/пароль).
+2. «Прочитать с Keenetic» / «Залить» по необходимости — работа с `/opt/etc/xray/configs` и `/opt/etc/xkeen`.
+3. Перед Apply helper делает бэкап в `/tmp/keengen-backup-*`.
+
+Это **не** замена XKeen-UI: панель XKeen по-прежнему на `:1000`, keengen — генератор и заливка конфигов на `:1001`.
+
+### Остановка и снятие
+
+```sh
+/opt/etc/init.d/S99keengen stop
+opkg remove keengen
+```
+
+### Важно
+
+- **Не** открывайте порт **1001** в интернет / WAN — только LAN.
+- Перед «Залить» / Apply убедитесь, что бэкап устраивает; при сомнении скопируйте конфиги вручную.
 
 ## Остальное
 
 Архитектура: [docs/architecture.md](docs/architecture.md).  
-Безопасность: [SECURITY.md](SECURITY.md).
+Безопасность: [SECURITY.md](SECURITY.md).  
+IPK подробно: [docs/ipk.md](docs/ipk.md).
 
 ## Лицензия
 
 [MIT](LICENSE)
-
-IPK (ветка keengen-ipk): [docs/ipk.md](docs/ipk.md).
