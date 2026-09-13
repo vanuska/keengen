@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	appVersion     = "0.1.3"
+	appVersion     = "0.1.4"
 	githubRepo     = "vanuska/keengen"
 	ipkAssetStable = "keengen_mipsel-3.4.ipk"
+	minIpkBytes    = 50 << 10 // sanity floor for a real IPK
 )
 
 type ghRelease struct {
@@ -71,10 +72,23 @@ func handleInstallIpkLocal(w http.ResponseWriter, r *http.Request) {
 	}
 	result := installIpkLocal()
 	code := 200
-	if ok, _ := result["ok"].(bool); !ok {
+	ok, _ := result["ok"].(bool)
+	if !ok {
 		code = 502
 	}
+	// Never stop/restart before the client has the JSON body.
 	writeJSON(w, code, result)
+	if f, okFlush := w.(http.Flusher); okFlush {
+		f.Flush()
+	}
+	if ok {
+		if reload, _ := result["reloading"].(bool); reload {
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				_ = exec.Command("/opt/etc/init.d/S99keengen", "restart").Run()
+			}()
+		}
+	}
 }
 
 type latestIPK struct {
@@ -254,6 +268,104 @@ func resolveLatestRelease() (*latestIPK, error) {
 	return nil, fmt.Errorf("resolve-failed:api=%v;direct=%v", apiErr, directErr)
 }
 
+func downloadIPK(url, dest string) (int64, error) {
+	client := &http.Client{Timeout: 180 * time.Second}
+	var lastErr error
+	for attempt := 0; attempt < 2; attempt++ {
+		if attempt > 0 {
+			time.Sleep(1500 * time.Millisecond)
+		}
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return 0, err
+		}
+		setGitHubHeaders(req, false)
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if resp.StatusCode != 200 {
+			_ = resp.Body.Close()
+			lastErr = fmt.Errorf("http-%d", resp.StatusCode)
+			continue
+		}
+		f, err := os.Create(dest)
+		if err != nil {
+			_ = resp.Body.Close()
+			return 0, err
+		}
+		n, err := io.Copy(f, io.LimitReader(resp.Body, 32<<20))
+		_ = resp.Body.Close()
+		_ = f.Close()
+		if err != nil {
+			lastErr = err
+			_ = os.Remove(dest)
+			continue
+		}
+		if n < minIpkBytes {
+			_ = os.Remove(dest)
+			lastErr = fmt.Errorf("too-small:%d", n)
+			continue
+		}
+		// Entware IPK is gzip(tar); reject obvious HTML/error pages.
+		raw, _ := os.ReadFile(dest)
+		if len(raw) < 2 || raw[0] != 0x1f || raw[1] != 0x8b {
+			_ = os.Remove(dest)
+			lastErr = fmt.Errorf("not-gzip-ipk")
+			continue
+		}
+		return n, nil
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("download-failed")
+	}
+	return 0, lastErr
+}
+
+func verifyInstalled(wantVer string) (string, error) {
+	checks := []struct {
+		path string
+		exec bool
+	}{
+		{"/opt/sbin/keengen-httpd", true},
+		{"/opt/share/keengen/www/index.html", false},
+		{"/opt/etc/init.d/S99keengen", true},
+		{"/opt/etc/keengen/keengen.conf", false},
+	}
+	var parts []string
+	for _, c := range checks {
+		st, err := os.Stat(c.path)
+		if err != nil {
+			return "", fmt.Errorf("missing:%s", c.path)
+		}
+		if c.exec && st.Mode()&0111 == 0 {
+			return "", fmt.Errorf("not-exec:%s", c.path)
+		}
+		parts = append(parts, c.path)
+	}
+	conf, err := os.ReadFile("/opt/etc/keengen/keengen.conf")
+	if err != nil {
+		return "", fmt.Errorf("conf-read:%v", err)
+	}
+	if strings.Contains(string(conf), "\r") {
+		return "", fmt.Errorf("conf-has-cr")
+	}
+	out, err := exec.Command("opkg", "list-installed", "keengen").CombinedOutput()
+	detail := strings.TrimSpace(string(out))
+	if err != nil || !strings.Contains(detail, "keengen") {
+		return detail, fmt.Errorf("opkg-list:%s", detail)
+	}
+	if wantVer != "" && wantVer != "latest" && !strings.Contains(detail, wantVer) {
+		// Soft: package may use 0.1.4-1 while wantVer is 0.1.4 — prefix match.
+		if !strings.Contains(detail, wantVer+"-") && !strings.Contains(detail, " - "+wantVer) {
+			parts = append(parts, "opkg="+detail)
+		}
+	}
+	parts = append(parts, "opkg="+detail)
+	return strings.Join(parts, "; "), nil
+}
+
 func installIpkLocal() map[string]any {
 	steps := []map[string]any{}
 	add := func(name string, err error, detail string) {
@@ -281,53 +393,42 @@ func installIpkLocal() map[string]any {
 	add("backup", nil, bdir)
 
 	ipkPath := filepath.Join("/tmp", latest.name)
-	client := &http.Client{Timeout: 120 * time.Second}
-	resp, err := client.Get(latest.url)
-	if err != nil {
-		add("download", err, err.Error())
-		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		add("download", fmt.Errorf("http-%d", resp.StatusCode), resp.Status)
-		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
-	}
-	f, err := os.Create(ipkPath)
-	if err != nil {
-		add("download", err, err.Error())
-		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
-	}
-	n, err := io.Copy(f, io.LimitReader(resp.Body, 32<<20))
-	_ = f.Close()
+	n, err := downloadIPK(latest.url, ipkPath)
 	if err != nil {
 		add("download", err, err.Error())
 		return map[string]any{"ok": false, "error": "download-failed", "steps": steps, "backup": bdir}
 	}
 	add("download", nil, fmt.Sprintf("bytes=%d via Go https (not busybox wget)", n))
 
-	_ = exec.Command("opkg", "remove", "keengen").Run()
-	cmd := exec.Command("opkg", "install", ipkPath)
+	// Install without stopping httpd first — keep this request alive until response is sent.
+	// force-reinstall replaces files on disk while the old process keeps running.
+	cmd := exec.Command("opkg", "install", "--force-reinstall", "--force-overwrite", ipkPath)
 	out, err := cmd.CombinedOutput()
 	add("opkg-install", err, string(out))
 	if err != nil {
 		return map[string]any{"ok": false, "error": "opkg-failed", "steps": steps, "backup": bdir}
 	}
 
-	// Restart after responding would be nicer; best-effort here.
-	_ = exec.Command("/opt/etc/init.d/S99keengen", "stop").Run()
-	cmd = exec.Command("/opt/etc/init.d/S99keengen", "start")
-	out, err = cmd.CombinedOutput()
-	add("start", err, string(out))
+	vdetail, verr := verifyInstalled(latest.version)
+	add("verify-install", verr, vdetail)
+	if verr != nil {
+		// Do not restart — leave the old process running if still up.
+		return map[string]any{"ok": false, "error": "verify-failed", "steps": steps, "backup": bdir}
+	}
 
+	ui := "http://127.0.0.1:1001/"
+	if host := strings.TrimSpace(os.Getenv("KEENGEN_UI_HOST")); host != "" {
+		ui = "http://" + host + ":1001/"
+	}
 	return map[string]any{
-		"ok":                err == nil,
+		"ok":                true,
+		"reloading":         true,
 		"backup":            bdir,
 		"local_backup":      stamp,
 		"installed_version": latest.version,
 		"latest_tag":        latest.tag,
-		"ui":                "http://127.0.0.1:1001/",
+		"ui":                ui,
 		"steps":             steps,
-		"error":             map[bool]any{true: nil, false: "start-failed"}[err == nil],
 	}
 }
 

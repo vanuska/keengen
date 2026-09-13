@@ -4,7 +4,7 @@
 
 > Официальный Release IPK — только **mipsel-3.4** (проверено на Keenetic Hopper). Другие arch (например aarch64-3.10) не в Release и не тестировались. Проверка установки на конкретном устройстве — у владельца роутера; в CI железа нет.
 
-## Что в пакете `0.1.3-1`
+## Что в пакете `0.1.4-1`
 
 | Часть | Путь на роутере |
 |---|---|
@@ -30,7 +30,7 @@ GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
   go build -trimpath -ldflags='-s -w' -o ../../files/opt/sbin/keengen-httpd .
 cd ../../..
 bash ipk/scripts/build-ipk.sh
-# → dist/keengen_0.1.3-1_mipsel-3.4.ipk
+# → dist/keengen_0.1.4-1_mipsel-3.4.ipk
 # → dist/keengen_mipsel-3.4.ipk  (то же содержимое, стабильное имя для latest)
 # Сборка на Windows: build-ipk.sh снимает \r со всех текстовых файлов в stage
 # (кроме keengen-httpd) — иначе Entware `source`/shebang ломаются.
@@ -49,8 +49,11 @@ Entware (bin.entware.net) ждёт **gzip(tar)** с членами
 
 `POST /api/keenetic/install-ipk` (только Python / keengen на ПК): SSH как **root** →
 бэкап на роутере → копия на ПК (без `tar -c` на роутере; SFTP или SSH find+cat) →
-HTTPS-скачивание Release на ПК → `opkg install` → `S99keengen start` → health `:1001`.
+HTTPS-скачивание Release на ПК → `opkg install` → проверка файлов на диске → `S99keengen start` → health `:1001`.
 В UI: кнопка после «Настройка входа» (логин **root**).
+
+Self-update с `:1001`: download → `opkg` → verify → JSON-ответ клиенту → только потом `S99keengen restart`.
+Предпочтительнее обновлять с ПК.
 
 На самом роутере busybox `wget` часто **без HTTPS** — one-liner через wget с GitHub обычно не сработает. Если есть `curl`:
 
@@ -75,7 +78,7 @@ opkg install /tmp/keengen_mipsel-3.4.ipk
 
 ### Переустановка той же версии
 
-Пакет **0.1.3-1** — тег `v0.1.3`. При обновлении с 0.1.2 opkg заменит файлы (включая www и conf).
+Пакет **0.1.4-1** — тег `v0.1.4`. При обновлении с 0.1.3 opkg заменит файлы (включая www и conf).
 Если opkg пишет «уже установлено» или conf не обновился: с ПК «Удалить IPK», затем снова
 установка; или `opkg remove keengen` и `opkg install …`.
 

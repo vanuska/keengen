@@ -42,7 +42,7 @@ WRITE_LIMIT = 262144
 AUTH_LIMIT = 4096
 FILE_LIMIT = 120000
 INSTALL_LIMIT = 8192
-INSTALL_TIMEOUT = 120
+INSTALL_TIMEOUT = 180
 GITHUB_REPO = "vanuska/keengen"
 # Stable name on each Release (also versioned keengen_X.Y.Z-1_mipsel-3.4.ipk).
 IPK_ASSET_STABLE = "keengen_mipsel-3.4.ipk"
@@ -576,7 +576,7 @@ def collect(auth: dict) -> dict:
     }
 
 
-def _http_bytes(url: str, timeout: int = 120) -> bytes:
+def _http_bytes(url: str, timeout: int = 180) -> bytes:
     import urllib.error
     import urllib.request
 
@@ -584,14 +584,21 @@ def _http_bytes(url: str, timeout: int = 120) -> bytes:
         url,
         headers={"User-Agent": "keengen/%s" % app_version()},
     )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        raise RuntimeError("download-failed:%s" % exc) from exc
-    if not data:
-        raise RuntimeError("download-empty")
-    return data
+    last_exc: BaseException | None = None
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = resp.read()
+            if not data:
+                raise RuntimeError("download-empty")
+            return data
+        except (urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+            last_exc = exc
+            if attempt == 0:
+                time.sleep(1.5)
+                continue
+            break
+    raise RuntimeError("download-failed:%s" % last_exc) from last_exc
 
 
 def _backup_dir(stamp: str) -> Path:
@@ -970,17 +977,23 @@ def install_ipk(auth: dict) -> dict:
             "local_backup": stamp,
         }
 
+    # Verify on disk before any S99keengen restart — never restart a half-install.
     code, detail = step(
-        "verify-www",
-        "test -d /opt/share/keengen/www && test -f /opt/share/keengen/www/index.html && "
-        "test -x /opt/sbin/keengen-httpd && ls -la /opt/share/keengen/www",
-        timeout=15,
+        "verify-install",
+        "test -x /opt/sbin/keengen-httpd && "
+        "test -f /opt/share/keengen/www/index.html && "
+        "test -x /opt/etc/init.d/S99keengen && "
+        "test -f /opt/etc/keengen/keengen.conf && "
+        "! grep -q $'\r' /opt/etc/keengen/keengen.conf && "
+        "opkg list-installed keengen | grep -q keengen && "
+        "ls -la /opt/sbin/keengen-httpd /opt/etc/init.d/S99keengen /opt/share/keengen/www/index.html",
+        timeout=20,
     )
     if code != 0:
-        _save_local_backup_meta(stamp, router_backup=bdir, latest_tag=latest.get("tag"), failed="verify-www")
+        _save_local_backup_meta(stamp, router_backup=bdir, latest_tag=latest.get("tag"), failed="verify-install")
         return {
             "ok": False,
-            "error": "www-missing",
+            "error": "verify-failed",
             "steps": steps,
             "backup": bdir,
             "local_backup": stamp,
@@ -1261,7 +1274,9 @@ def main(argv: list[str] | None = None) -> int:
     if not WEB.is_dir():
         print("missing web/ next to keengen.py", file=sys.stderr)
         return 1
+    # Threading so long install-ipk does not block /api/health and static UI.
     httpd = ThreadingHTTPServer((args.bind, args.port), Handler)
+    httpd.daemon_threads = True
     print("keengen UI http://%s:%s/" % (args.bind, args.port), flush=True)
     if args.bind not in ("127.0.0.1", "::1"):
         print("warning: bind is not loopback; SSH API is reachable on this address", file=sys.stderr)

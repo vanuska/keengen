@@ -1896,6 +1896,22 @@
         const ver = j.installed_version || (ipkInfo && ipkInfo.latest_version) || "";
         var uiUrl = j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/");
         var bakStamp = backupStampFrom(j);
+        // :1001 self-update: server restarts after this response — don't navigate mid-restart.
+        if (localEntware && j.reloading) {
+          closeUiWin();
+          if (ipkUiLink) {
+            ipkUiLink.href = uiUrl;
+            ipkUiLink.textContent = t("ipkOpenUi");
+            ipkUiLink.hidden = false;
+          }
+          if (ipkStatus) {
+            var reloadMsg = t("ipkReloading", ver);
+            ipkStatus.textContent = bakStamp ? (reloadMsg + " · " + t("bakMadeShort", bakStamp)) : reloadMsg;
+          }
+          if (bakStamp) showBakNotice(bakStamp);
+          setTimeout(function () { refreshIpkPanel(); }, 15000);
+          return;
+        }
         var opened = false;
         if (uiWin && !uiWin.closed) {
           try {
@@ -1929,9 +1945,19 @@
           ipkLog.hidden = true;
           ipkLog.textContent = "";
         }
-        var msg = e && e.message ? e.message : e;
-        if (ipkStatus) ipkStatus.textContent = t("ipkFail", msg);
-        showIpkErr(t("ipkFail", msg));
+        var raw = e && e.message ? String(e.message) : String(e || "");
+        var isNet = /failed to fetch|networkerror|load failed|network request failed/i.test(raw);
+        var friendly;
+        if (isNet && localEntware) {
+          // Self-update: httpd restarts after response; browser may still see a dropped connection.
+          friendly = t("ipkFailSelfUpdate");
+        } else if (isNet) {
+          friendly = t("ipkFailNet");
+        } else {
+          friendly = t("ipkFail", raw);
+        }
+        if (ipkStatus) ipkStatus.textContent = friendly;
+        showIpkErr(friendly);
       }).finally(function () {
         setKeeneticButton(keeneticLan, null);
       });
