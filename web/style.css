@@ -9,7 +9,7 @@ border:1px solid var(--glassb);border-radius:18px;padding:8px 16px 8px 8px;
 backdrop-filter:blur(24px);box-shadow:var(--shadow)}
 .clockbox svg{width:56px;height:56px;flex:none}
 .chipbar{background:transparent;border:1px solid var(--glassb);border-radius:20px;
-padding:12px 14px;margin:8px 0 20px}
+padding:12px 14px;margin:8px 0 20px;overflow:visible;position:relative}
 .chipbar .chips{margin:0}
 .face{fill:none;stroke:var(--line);stroke-width:2}
 .ring{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;
