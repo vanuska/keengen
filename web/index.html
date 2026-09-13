@@ -36,8 +36,8 @@
   </div>
   <div class="chipbar">
   <div class="chips">
-    <button type="button" class="chip" id="themeBtn" title="тема">🎨 тема</button>
-    <a class="chip" href="howto.html" data-i18n="howto">📖 как пользоваться</a>
+    <button type="button" class="chip" id="themeBtn" title="Сменить тему оформления" data-i18n-title="tipTheme">🎨 тема</button>
+    <a class="chip" href="howto.html" data-i18n="howto" title="Краткая инструкция по работе с keengen" data-i18n-title="tipHowto">📖 как пользоваться</a>
     <button type="button" class="chip" id="langBtn" title="Язык">🌐 RU</button>
   </div>
   </div>
@@ -47,8 +47,8 @@
       <h2 data-i18n="h1">1. Ссылки и файлы</h2>
       <p class="note" data-i18n="note1">«Прочитать с Keenetic» сразу показывает подключения в секции 2. Активное в таблице пишется в 05_routing. «Залить» / правый клик по вкладке — запись на роутер после входа. «Прочитать ссылки» — только поле ниже.</p>
       <div class="keenetic-bar">
-        <button type="button" class="btn ghost" id="authKeenetic" data-i18n="authBtn">Настройка входа</button>
-        <button type="button" class="btn primary" id="readKeenetic" disabled data-i18n="readBtn">Прочитать с Keenetic</button>
+        <button type="button" class="btn ghost" id="authKeenetic" data-i18n="authBtn" title="Сохранить адрес, порт и пароль Entware SSH для этого браузера" data-i18n-title="tipAuthBtn">Настройка входа</button>
+        <button type="button" class="btn primary" id="readKeenetic" disabled data-i18n="readBtn" title="прочитать 01–06 и списки с роутера (запись не делается)" data-i18n-title="tipReadBtn">Прочитать с Keenetic</button>
         <span class="keenetic-badge" id="keeneticWhere" data-i18n="whereWait">Проверяю, дома ли вы…</span>
       </div>
       <div class="ipk-install" id="ipkInstallBox">
@@ -56,7 +56,7 @@
         <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»), если keengen на ПК. Кнопка берёт latest с GitHub, делает бэкап, ставит/обновляет IPK и UI keengen на Keenetic (:1001). XKeen-UI на :1000 не трогается.</p>
         <p class="preview-hint" id="ipkVerLine"></p>
         <div class="actions">
-          <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn">Установить IPK на роутер</button>
+          <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn" title="Скачать latest IPK с GitHub, сделать бэкап и установить/обновить keengen на роутере" data-i18n-title="tipInstallIpk">Установить IPK на роутер</button>
           <span class="backup-status" id="ipkStatus"></span>
         </div>
         <pre class="ipk-log" id="ipkLog" hidden></pre>
@@ -67,23 +67,23 @@
           <label for="backupPick" data-i18n="bakPick">Слепок</label>
           <select id="backupPick"></select>
           <div class="actions" style="margin-top:10px">
-            <button type="button" class="btn ghost" id="bakRefresh" data-i18n="bakRefresh">Обновить список</button>
-            <button type="button" class="btn primary" id="bakRestoreCfg" disabled data-i18n="bakRestoreCfg">Restore конфиги</button>
-            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk">Restore IPK</button>
-            <button type="button" class="btn ghost" id="bakRemoveIpk" disabled data-i18n="bakRemoveIpk">Удалить IPK</button>
+            <button type="button" class="btn ghost" id="bakRefresh" data-i18n="bakRefresh" title="Перечитать папку backups/ на этом ПК и обновить выпадающий список слепков" data-i18n-title="tipBakRefresh">Обновить список</button>
+            <button type="button" class="btn primary" id="bakRestoreCfg" disabled data-i18n="bakRestoreCfg" title="Восстановить конфиги XKeen из выбранного слепка на роутер" data-i18n-title="tipBakRestoreCfg">Restore конфиги</button>
+            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk" title="Откатить IPK keengen из выбранного слепка на роутер" data-i18n-title="tipBakRestoreIpk">Restore IPK</button>
+            <button type="button" class="btn ghost" id="bakRemoveIpk" disabled data-i18n="bakRemoveIpk" title="Удалить пакет keengen с роутера (opkg remove; сначала бэкап)" data-i18n-title="tipBakRemoveIpk">Удалить IPK</button>
           </div>
           <span class="backup-status" id="bakStatus"></span>
         </div>
       </div>
-      <label for="links" data-i18n="linksLbl">Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Проверка в этот момент: битое не попадает, живые 03/04/05 не затираются.</label>
+      <label for="links" data-i18n="linksLbl">Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Встроенная проверка ссылок и JSON: битое не попадает; живые 03/04/05 не затираются целиком. 01, 02, 06 и .lst от «Прочитать ссылки» сами не меняются.</label>
       <textarea id="links" placeholder="vless://…#vpn-reality&#10;vless://…#vpn-tls&#10;hy2://…#vpn-hy2"></textarea>
       <div class="drop" id="drop" tabindex="0">
         <span data-i18n="drop">Одна настройка за раз: нажмите или перетащите QR, .txt, JSON со ссылками — или вставьте текст JSON 01–06 либо .lst (ip_exclude / port_exclude / port_proxying / xkeen). Формат распознается автоматически.</span>
         <input id="files" type="file" accept="image/*,.txt,.json,.lst,text/plain,application/json" hidden>
       </div>
       <div class="actions">
-        <button type="button" class="btn ghost" id="clear" data-i18n="clearBtn">Очистить поле</button>
-        <button type="button" class="btn ghost" id="parse" data-i18n="parseBtn">Прочитать ссылки</button>
+        <button type="button" class="btn ghost" id="clear" data-i18n="clearBtn" title="Очистить поле ссылок" data-i18n-title="tipClearBtn">Очистить поле</button>
+        <button type="button" class="btn ghost" id="parse" data-i18n="parseBtn" title="Разобрать поле: проверка ссылок/JSON; обновить 03/04/05; 01, 02, 06 и .lst сами не меняются" data-i18n-title="tipParseBtn">Прочитать ссылки</button>
       </div>
       <div class="err" id="err" hidden></div>
     </section>
@@ -105,8 +105,8 @@
   <section class="card card-preview">
     <h2 data-i18n="hPreview">Превью файлов</h2>
     <div class="preview-actions">
-      <button type="button" class="btn primary" id="backup" disabled data-i18n="backupBtn">Скачать все файлы разом</button>
-      <button type="button" class="btn ghost" id="applyAll" disabled data-i18n="applyAllBtn">Залить всё на Keenetic</button>
+      <button type="button" class="btn primary" id="backup" disabled data-i18n="backupBtn" title="Скачать ZIP со всеми файлами превью" data-i18n-title="tipBackupBtn">Скачать все файлы разом</button>
+      <button type="button" class="btn ghost" id="applyAll" disabled data-i18n="applyAllBtn" title="записать файлы на роутер и перезапустить XKeen" data-i18n-title="tipApplyAllBtn">Залить всё на Keenetic</button>
       <span class="backup-status" id="backupStatus"></span>
     </div>
     <p class="preview-hint" data-i18n="previewHint">Это итоговые файлы, не черновик. Двойной щелчок копирует. Правая кнопка — скачать или залить этот файл. Правка — в поле сверху, затем «Прочитать ссылки»: проверка и замена только этой вкладки, остальные не трогаются.</p>

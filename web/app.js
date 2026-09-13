@@ -308,7 +308,7 @@
       applyAll.disabled = !hasFiles || !keeneticLan || !ready;
       applyAll.title = (!keeneticLan || !ready)
         ? t("needSsh")
-        : t("writeRestart");
+        : t("tipApplyAllBtn");
     }
   }
 
@@ -428,13 +428,12 @@
       return;
     }
     const n = state.servers.length;
-    const tags = state.servers.map(function (s) { return s.tag; }).join(", ");
     if (!n) {
       hint.textContent = t("hintNo04");
     } else if (n === 1) {
-      hint.textContent = t("hintOne", tags);
+      hint.textContent = t("hintOne");
     } else {
-      hint.textContent = t("hintMany", n, tags);
+      hint.textContent = t("hintMany");
     }
     hint.classList.toggle("okish", n > 1 || state.mode === "merge");
     if (n && (!state.proxy || !state.servers.some(function (s) { return s.tag === state.proxy; }))) {
@@ -1416,7 +1415,7 @@
       btn.disabled = !keeneticLan || (!ready && !localEntware);
       if (!keeneticLan) btn.title = t("titleAway");
       else if (!ready && !localEntware) btn.title = t("titleNeedAuth");
-      else btn.title = t("titleRead");
+      else btn.title = t("tipReadBtn");
     }
     if (where) {
       where.classList.toggle("lan", keeneticLan && (ready || localEntware));
@@ -1482,18 +1481,18 @@
     var remBtn = document.getElementById("bakRemoveIpk");
     if (cfgBtn) {
       cfgBtn.disabled = !keeneticLan || !isRoot || !(item && item.configs);
-      cfgBtn.title = !isRoot ? t("bakNeedRoot") : "";
+      cfgBtn.title = !isRoot ? t("bakNeedRoot") : t("tipBakRestoreCfg");
     }
     if (ipkBtn) {
       ipkBtn.disabled = !keeneticLan || !isRoot || !(item && (item.previous_ipk || item.ipk));
-      ipkBtn.title = !isRoot ? t("bakNeedRoot") : "";
+      ipkBtn.title = !isRoot ? t("bakNeedRoot") : t("tipBakRestoreIpk");
     }
     if (remBtn) {
       remBtn.hidden = false;
       remBtn.disabled = !keeneticLan || !isRoot || !(ipkInfo && ipkInfo.router_installed);
       if (!isRoot) remBtn.title = t("bakNeedRoot");
       else if (!(ipkInfo && ipkInfo.router_installed)) remBtn.title = t("bakNeedPkg");
-      else remBtn.title = "";
+      else remBtn.title = t("tipBakRemoveIpk");
     }
   }
 
@@ -1547,7 +1546,7 @@
     if (!keeneticLan) ipkBtn.title = t("titleAway");
     else if (!localEntware && !auth) ipkBtn.title = t("titleNeedAuth");
     else if (!localEntware && !isRoot) ipkBtn.title = t("ipkNeedRoot");
-    else ipkBtn.title = t("ipkBtn");
+    else ipkBtn.title = t("tipInstallIpk");
 
     var req;
     if (localEntware) {
