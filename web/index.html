@@ -53,13 +53,27 @@
       </div>
       <div class="ipk-install" id="ipkInstallBox">
         <h3 class="ipk-title" data-i18n="ipkTitle">Установить keengen на Keenetic (Entware)</h3>
-        <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»), если helper на ПК. Кнопка берёт latest с GitHub, делает бэкап, ставит/обновляет IPK и UI на :1001. XKeen-UI на :1000 не трогается.</p>
+        <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»), если keengen на ПК. Кнопка берёт latest с GitHub, делает бэкап, ставит/обновляет IPK и UI keengen на Keenetic (:1001). XKeen-UI на :1000 не трогается.</p>
         <p class="preview-hint" id="ipkVerLine"></p>
         <div class="actions">
           <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn">Установить IPK на роутер</button>
           <span class="backup-status" id="ipkStatus"></span>
         </div>
         <pre class="ipk-log" id="ipkLog" hidden></pre>
+        <p class="preview-hint" id="bakNotice"></p>
+        <div class="ipk-restore" id="ipkRestoreBox">
+          <h3 class="ipk-title" data-i18n="bakTitle">Локальные бэкапы (на ПК)</h3>
+          <p class="preview-hint" data-i18n="bakHint">Бэкап конфигов делается всегда при «Прочитать» и при установке IPK. Слепки лежат в backups/ на этом ПК. Restore — только с ПК под root SSH.</p>
+          <label for="backupPick" data-i18n="bakPick">Слепок</label>
+          <select id="backupPick"></select>
+          <div class="actions" style="margin-top:10px">
+            <button type="button" class="btn ghost" id="bakRefresh" data-i18n="bakRefresh">Обновить список</button>
+            <button type="button" class="btn primary" id="bakRestoreCfg" disabled data-i18n="bakRestoreCfg">Restore конфиги</button>
+            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk">Restore IPK</button>
+            <button type="button" class="btn ghost" id="bakRemoveIpk" disabled data-i18n="bakRemoveIpk">Удалить IPK</button>
+          </div>
+          <span class="backup-status" id="bakStatus"></span>
+        </div>
       </div>
       <label for="links" data-i18n="linksLbl">Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Проверка в этот момент: битое не попадает, живые 03/04/05 не затираются.</label>
       <textarea id="links" placeholder="vless://…#vpn-reality&#10;vless://…#vpn-tls&#10;hy2://…#vpn-hy2"></textarea>
@@ -99,7 +113,7 @@
     <div class="tabs" id="tabs"></div>
     <pre id="preview">{}</pre>
   </section>
-  <p class="footer" data-i18n="footer">keengen · конфиги для XKeen-UI · SSH только через локальный helper</p>
+  <p class="footer" data-i18n="footer">keengen · конфиги для XKeen-UI · SSH только через keengen на ПК</p>
 
   <div id="tabMenu" class="tab-menu" hidden aria-hidden="true">
     <button type="button" data-act="copy" data-i18n="tabCopy">Скопировать в буфер</button>

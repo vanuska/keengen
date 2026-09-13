@@ -153,6 +153,26 @@ func handleProbe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func snapshotConfigsLocal(reason string) map[string]any {
+	stamp := time.Now().Format("20060102-150405")
+	bdir := "/opt/backup/keengen-" + reason + "-" + stamp
+	if err := os.MkdirAll(bdir, 0755); err != nil {
+		bdir = "/opt/home/keengen/backup/keengen-" + reason + "-" + stamp
+		if err2 := os.MkdirAll(bdir, 0755); err2 != nil {
+			return map[string]any{"ok": false, "error": "backup-failed", "reason": reason}
+		}
+	}
+	_ = exec.Command("cp", "-a", "/opt/etc/xray/configs", bdir+"/").Run()
+	_ = exec.Command("cp", "-a", "/opt/etc/xkeen", bdir+"/").Run()
+	return map[string]any{
+		"ok":            true,
+		"reason":        reason,
+		"stamp":         stamp,
+		"router_backup": bdir,
+		"local_backup":  nil,
+	}
+}
+
 func handleRead(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
@@ -162,6 +182,8 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 400, map[string]any{"ok": false, "error": "bad-json"})
 		return
 	}
+	// Router UI: snapshot on-device (no PC pull). Restores stay keengen-on-PC only.
+	snap := snapshotConfigsLocal("read")
 	files := map[string]any{}
 	missing := []string{}
 	for name, p := range allowedRemote {
@@ -194,6 +216,7 @@ func handleRead(w http.ResponseWriter, r *http.Request) {
 		"missing": missing,
 		"errors":  0,
 		"mode":    "local",
+		"backup":  snap,
 	})
 }
 

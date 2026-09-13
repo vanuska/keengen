@@ -191,6 +191,7 @@ func installIpkLocal() map[string]any {
 	return map[string]any{
 		"ok":                err == nil,
 		"backup":            bdir,
+		"local_backup":      stamp,
 		"installed_version": latest.version,
 		"latest_tag":        latest.tag,
 		"ui":                "http://127.0.0.1:1001/",

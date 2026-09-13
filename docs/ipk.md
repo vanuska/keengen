@@ -37,9 +37,9 @@ Entware (bin.entware.net) ждёт **gzip(tar)** с членами
 
 ## Установка
 
-### Из локального PC-helper
+### Из keengen на ПК
 
-`POST /api/keenetic/install-ipk` (только Python helper): SSH как **root** →
+`POST /api/keenetic/install-ipk` (только keengen на ПК / Python): SSH как **root** →
 бэкап → wget Release → `opkg install` → `S99keengen start` → health `:1001`.
 В UI: секция «Установить keengen на Keenetic» после «Настройка входа».
 

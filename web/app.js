@@ -1428,6 +1428,110 @@
     }
     setCopyEnabled();
     refreshIpkPanel();
+    updateBakButtons();
+  }
+
+  var bakItems = [];
+
+  function backupStampFrom(j) {
+    if (!j) return "";
+    var bak = j.backup;
+    if (bak && typeof bak === "object") {
+      if (bak.ok === false) return "";
+      return bak.local_backup || bak.stamp || bak.router_backup || "";
+    }
+    if (j.local_backup) return String(j.local_backup);
+    if (typeof bak === "string" && bak) {
+      var m = bak.match(/(\d{8}-\d{6})/);
+      return m ? m[1] : bak;
+    }
+    return "";
+  }
+
+  function showBakNotice(stamp) {
+    if (!stamp) return;
+    var notice = document.getElementById("bakNotice");
+    var st = document.getElementById("bakStatus");
+    var ipkSt = document.getElementById("ipkStatus");
+    var shortMsg = t("bakMadeShort", stamp);
+    if (notice) notice.textContent = t("bakMade", stamp);
+    if (st && !localEntware) st.textContent = shortMsg;
+    // On router UI the restore box is hidden — keep a short note on ipkStatus too.
+    if (localEntware && ipkSt && !ipkSt.textContent) ipkSt.textContent = shortMsg;
+  }
+
+  function selectedBak() {
+    var pick = document.getElementById("backupPick");
+    var id = pick && pick.value;
+    if (!id) return null;
+    for (var i = 0; i < bakItems.length; i++) {
+      if (bakItems[i].id === id) return bakItems[i];
+    }
+    return null;
+  }
+
+  function updateBakButtons() {
+    var box = document.getElementById("ipkRestoreBox");
+    if (box) box.hidden = !!localEntware;
+    if (localEntware) return;
+    var auth = authGet();
+    var isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
+    var item = selectedBak();
+    var cfgBtn = document.getElementById("bakRestoreCfg");
+    var ipkBtn = document.getElementById("bakRestoreIpk");
+    var remBtn = document.getElementById("bakRemoveIpk");
+    if (cfgBtn) {
+      cfgBtn.disabled = !keeneticLan || !isRoot || !(item && item.configs);
+      cfgBtn.title = !isRoot ? t("bakNeedRoot") : "";
+    }
+    if (ipkBtn) {
+      ipkBtn.disabled = !keeneticLan || !isRoot || !(item && (item.previous_ipk || item.ipk));
+      ipkBtn.title = !isRoot ? t("bakNeedRoot") : "";
+    }
+    if (remBtn) {
+      remBtn.hidden = false;
+      remBtn.disabled = !keeneticLan || !isRoot;
+      remBtn.title = !isRoot ? t("bakNeedRoot") : "";
+    }
+  }
+
+  function refreshBackupList() {
+    var box = document.getElementById("ipkRestoreBox");
+    if (localEntware) {
+      if (box) box.hidden = true;
+      return Promise.resolve();
+    }
+    if (box) box.hidden = false;
+    return fetch("/api/backups", { cache: "no-store" }).then(function (r) {
+      return r.json();
+    }).then(function (j) {
+      bakItems = (j && j.items) || [];
+      var pick = document.getElementById("backupPick");
+      if (!pick) return;
+      var prev = pick.value;
+      pick.innerHTML = "";
+      if (!bakItems.length) {
+        var empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = t("bakEmpty");
+        pick.appendChild(empty);
+      } else {
+        bakItems.forEach(function (it) {
+          var o = document.createElement("option");
+          o.value = it.id;
+          var bits = [];
+          if (it.configs) bits.push("cfg");
+          if (it.ipk) bits.push("ipk");
+          if (it.previous_ipk) bits.push("prev");
+          o.textContent = it.id + (bits.length ? " (" + bits.join(", ") + ")" : "");
+          pick.appendChild(o);
+        });
+        if (prev) pick.value = prev;
+      }
+      updateBakButtons();
+    }).catch(function () {
+      updateBakButtons();
+    });
   }
 
   function refreshIpkPanel() {
@@ -1554,8 +1658,10 @@
     return fetch("/api/keenetic/where", { cache: "no-store" }).then(function (r) { return r.json(); });
   }).then(function (j) {
     setKeeneticButton(j && j.where === "lan", j && j.hint);
+    refreshBackupList();
   }).catch(function () {
     setKeeneticButton(false, t("notHome"));
+    refreshBackupList();
   });
   document.getElementById("authKeenetic").addEventListener("click", showAuthDlg);
   document.getElementById("authCancel").addEventListener("click", hideAuthDlg);
@@ -1613,10 +1719,14 @@
         }
         showErr("");
         const ver = j.installed_version || (ipkInfo && ipkInfo.latest_version) || "";
+        var bakStamp = backupStampFrom(j);
         if (ipkStatus) {
-          ipkStatus.textContent = t("ipkOk", ver, j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/"));
+          var okMsg = t("ipkOk", ver, j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/"));
+          ipkStatus.textContent = bakStamp ? (okMsg + " · " + t("bakMadeShort", bakStamp)) : okMsg;
         }
+        if (bakStamp) showBakNotice(bakStamp);
         refreshIpkPanel();
+        refreshBackupList();
       }).catch(function (e) {
         showErr(t("ipkFail", e && e.message ? e.message : e));
         if (ipkStatus) ipkStatus.textContent = "";
@@ -1721,6 +1831,9 @@
       if (!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
       const pack = (j.files && typeof j.files === "object") ? j.files : j;
       loadSnapshot(pack);
+      var bakStamp = backupStampFrom(j);
+      if (bakStamp) showBakNotice(bakStamp);
+      refreshBackupList();
       if (!state.servers.length) {
         showErr(j.missing && j.missing.indexOf("04_outbounds.json") >= 0
           ? t("readNo04file")
@@ -1737,10 +1850,150 @@
     });
   });
 
+  (function wireBackupUi() {
+    var pick = document.getElementById("backupPick");
+    var refreshBtn = document.getElementById("bakRefresh");
+    var cfgBtn = document.getElementById("bakRestoreCfg");
+    var ipkBtn = document.getElementById("bakRestoreIpk");
+    var remBtn = document.getElementById("bakRemoveIpk");
+    var bakStatus = document.getElementById("bakStatus");
+    if (pick) pick.addEventListener("change", updateBakButtons);
+    if (refreshBtn) refreshBtn.addEventListener("click", function () {
+      if (bakStatus) bakStatus.textContent = t("bakBusy");
+      refreshBackupList().then(function () {
+        if (bakStatus) bakStatus.textContent = t("bakOk");
+      });
+    });
+    function bakAuthOrFail() {
+      if (localEntware) return null;
+      var auth = authGet();
+      if (!auth || !keeneticLan) {
+        showErr(t("needAuth"));
+        return null;
+      }
+      if (String(auth.user || "").toLowerCase() !== "root") {
+        showErr(t("bakNeedRoot"));
+        return null;
+      }
+      return {
+        host: auth.host,
+        port: parseInt(auth.port, 10) || 22,
+        user: auth.user,
+        password: auth.password || "",
+      };
+    }
+    if (cfgBtn) cfgBtn.addEventListener("click", function () {
+      if (cfgBtn.disabled) return;
+      var item = selectedBak();
+      if (!item || !item.configs) return;
+      var auth = bakAuthOrFail();
+      if (!auth) return;
+      if (!window.confirm(t("bakConfirmCfg", item.id))) return;
+      if (bakStatus) bakStatus.textContent = t("bakBusy");
+      cfgBtn.disabled = true;
+      fetch("/api/backups/restore-configs", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({ stamp: item.id }, auth)),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
+          return { r: r, j: {} };
+        });
+      }).then(function (x) {
+        if (!x.r.ok || !(x.j && x.j.ok)) {
+          showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));
+          if (bakStatus) bakStatus.textContent = "";
+          return;
+        }
+        showErr("");
+        if (bakStatus) bakStatus.textContent = t("bakOk");
+      }).catch(function (e) {
+        showErr(t("bakFail", e && e.message ? e.message : e));
+        if (bakStatus) bakStatus.textContent = "";
+      }).finally(function () {
+        updateBakButtons();
+      });
+    });
+    if (ipkBtn) ipkBtn.addEventListener("click", function () {
+      if (ipkBtn.disabled) return;
+      var item = selectedBak();
+      if (!item) return;
+      var which = item.previous_ipk ? "previous" : "installed";
+      if (!item.previous_ipk && !item.ipk) return;
+      var auth = bakAuthOrFail();
+      if (!auth) return;
+      if (!window.confirm(t("bakConfirmIpk", item.id + " / " + which))) return;
+      if (bakStatus) bakStatus.textContent = t("bakBusy");
+      ipkBtn.disabled = true;
+      fetch("/api/backups/restore-ipk", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({ stamp: item.id, which: which }, auth)),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
+          return { r: r, j: {} };
+        });
+      }).then(function (x) {
+        if (!x.r.ok || !(x.j && x.j.ok)) {
+          showErr(t("bakFail", (x.j && x.j.error) || ("HTTP " + x.r.status)));
+          if (bakStatus) bakStatus.textContent = "";
+          return;
+        }
+        showErr("");
+        if (bakStatus) bakStatus.textContent = t("bakOk");
+        refreshIpkPanel();
+      }).catch(function (e) {
+        showErr(t("bakFail", e && e.message ? e.message : e));
+        if (bakStatus) bakStatus.textContent = "";
+      }).finally(function () {
+        updateBakButtons();
+      });
+    });
+    if (remBtn) remBtn.addEventListener("click", function () {
+      if (remBtn.disabled || localEntware) return;
+      var auth = bakAuthOrFail();
+      if (!auth) return;
+      if (!window.confirm(t("bakConfirmRemove"))) return;
+      if (bakStatus) bakStatus.textContent = t("bakBusy");
+      remBtn.disabled = true;
+      fetch("/api/keenetic/remove-ipk", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(auth),
+      }).then(function (r) {
+        return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
+          return { r: r, j: {} };
+        });
+      }).then(function (x) {
+        var j = x.j || {};
+        if (!x.r.ok || !j.ok) {
+          showErr(t("bakFail", j.error || ("HTTP " + x.r.status)));
+          if (bakStatus) bakStatus.textContent = "";
+          return;
+        }
+        showErr("");
+        var bakStamp = backupStampFrom(j) || backupStampFrom({ backup: j.backup });
+        if (bakStamp) showBakNotice(bakStamp);
+        else if (bakStatus) bakStatus.textContent = t("bakOk");
+        refreshIpkPanel();
+        refreshBackupList();
+      }).catch(function (e) {
+        showErr(t("bakFail", e && e.message ? e.message : e));
+        if (bakStatus) bakStatus.textContent = "";
+      }).finally(function () {
+        updateBakButtons();
+      });
+    });
+  })();
+
   document.addEventListener("kg-lang", function () {
     rebuild();
     setKeeneticButton(keeneticLan, null);
     setCopyEnabled();
+    refreshBackupList();
   });
 
   restoreWork();

@@ -1,7 +1,7 @@
 # keengen-httpd (Entware)
 
 Small Go binary for the router: serves `web/` and the same
-`/api/keenetic/*` JSON as the PC helper, but reads/writes **local** files
+`/api/keenetic/*` JSON as keengen on PC, but reads/writes **local** files
 under `/opt/etc/xray/configs` and `/opt/etc/xkeen` (no SSH, no Python).
 
 ## Build (cross-compile)

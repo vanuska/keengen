@@ -1,5 +1,6 @@
 dist/
 *.ipk
+backups/
 ipk/files/opt/sbin/keengen-httpd
 __pycache__/
 *.pyc
