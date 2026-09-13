@@ -14,7 +14,7 @@ Crosspatform `vless://`, `hy2://`, … generator, reader and uploader for **Keen
 
 # Как пользоваться
 
-XKeen-UI остаётся на Keenetic. keengen cxbnsdftn и готовит JSON который заливается на Луутуешс с XKeen-UI в ядро XRAY.
+XKeen-UI остаётся на Keenetic. keengen считывает и готовит JSON который заливается на Keenetic с XKeen-UI в ядро XRAY.
 
 ## Быстрый старт
 
