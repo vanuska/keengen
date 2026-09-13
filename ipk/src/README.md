@@ -25,4 +25,4 @@ Then from repo root: `bash ipk/scripts/build-ipk.sh`
 | POST | `/api/keenetic/read` | reads allowed JSON/.lst from disk |
 | POST | `/api/keenetic/write` | backup under `/tmp/keengen-backup-*`, write, optional `xkeen -restart` |
 
-UI: open `http://<router>:1001/`, «Настройка входа» → Save once (probe always OK in local mode), then Read / Apply.
+UI: open `http://<router>:1001/`. «Настройка входа» is disabled (grey) on the router — go straight to Read / Apply.
