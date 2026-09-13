@@ -22,6 +22,12 @@
 2. Вход по Entware SSH (только LAN, private IP)  
 3. Превью вкладок 01–06 и списков · заливка на роутер  
 
+<p align="center">
+  <img src="docs/screenshots/tour.gif" width="520" alt="Обзор интерфейса keengen">
+</p>
+
+<p align="center"><em>обзор интерфейса</em></p>
+
 Подробный сценарий без SSH: [docs/howto.md](docs/howto.md).
 
 ---
