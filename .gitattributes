@@ -1,4 +1,5 @@
-# Shell scripts must stay LF — Entware rejects #!/bin/sh\r ("not found").
+# Shell/conf for Entware must stay LF — #!/bin/sh\r → "not found"; sourced conf with \r breaks vars.
 *.sh text eol=lf
 ipk/files/opt/etc/init.d/* text eol=lf
+ipk/files/opt/etc/keengen/*.conf text eol=lf
 ipk/scripts/* text eol=lf

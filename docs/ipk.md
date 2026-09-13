@@ -4,7 +4,7 @@
 
 > Официальный Release IPK — только **mipsel-3.4** (проверено на Keenetic Hopper). Другие arch (например aarch64-3.10) не в Release и не тестировались. Проверка установки на конкретном устройстве — у владельца роутера; в CI железа нет.
 
-## Что в пакете `0.1.0-2`
+## Что в пакете `0.1.0-3`
 
 | Часть | Путь на роутере |
 |---|---|
@@ -30,8 +30,10 @@ GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
   go build -trimpath -ldflags='-s -w' -o ../../files/opt/sbin/keengen-httpd .
 cd ../../..
 bash ipk/scripts/build-ipk.sh
-# → dist/keengen_0.1.0-2_mipsel-3.4.ipk
+# → dist/keengen_0.1.0-3_mipsel-3.4.ipk
 # → dist/keengen_mipsel-3.4.ipk  (то же содержимое, стабильное имя для latest)
+# Сборка на Windows: build-ipk.sh снимает \r со всех текстовых файлов в stage
+# (кроме keengen-httpd) — иначе Entware `source`/shebang ломаются.
 ```
 
 ## Формат `.ipk`
@@ -46,7 +48,8 @@ Entware (bin.entware.net) ждёт **gzip(tar)** с членами
 ### Из keengen на ПК (рекомендуется)
 
 `POST /api/keenetic/install-ipk` (только Python / keengen на ПК): SSH как **root** →
-бэкап → HTTPS-скачивание Release на ПК → `opkg install` → `S99keengen start` → health `:1001`.
+бэкап на роутере → копия на ПК (без `tar -c` на роутере; SFTP или SSH find+cat) →
+HTTPS-скачивание Release на ПК → `opkg install` → `S99keengen start` → health `:1001`.
 В UI: кнопка после «Настройка входа» (логин **root**).
 
 На самом роутере busybox `wget` часто **без HTTPS** — one-liner через wget с GitHub обычно не сработает. Если есть `curl`:
@@ -72,13 +75,14 @@ opkg install /tmp/keengen_mipsel-3.4.ipk
 
 ### Переустановка той же версии
 
-Пакет **0.1.0-2** (revision) заставляет opkg переустановить файлы даже после
-пересборки того же тега `v0.1.0`. Если всё же «уже установлено»: с ПК «Удалить IPK»,
-затем снова установка; или `opkg remove keengen` и `opkg install …`.
+Пакет **0.1.0-3** (revision) заставляет opkg заменить файлы (включая conf) даже после
+пересборки того же тега `v0.1.0`. Если opkg всё же пишет «уже установлено» или conf
+не обновился: с ПК «Удалить IPK», затем снова установка; или `opkg remove keengen`
+и `opkg install …`.
 
 Если `S99keengen start` пишет `not found`, а файл на месте — в init-скрипте
-были CRLF (исправлено в сборке IPK). Нужна переустановка пакета с актуального
-Release, не только `start`.
+были CRLF (сборка IPK снимает `\r`; init дополнительно чистит conf при source).
+Нужна переустановка пакета с актуального Release, не только `start`.
 
 ### Остановка и снятие
 

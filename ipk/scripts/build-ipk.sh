@@ -11,7 +11,7 @@ DIST="$ROOT/dist"
 STAGE="$DIST/stage"
 BIN_SRC="$IPK/files/opt/sbin/keengen-httpd"
 PKG_NAME=keengen
-PKG_VER=0.1.0-2
+PKG_VER=0.1.0-3
 ARCH=mipsel-3.4
 OUT="$DIST/${PKG_NAME}_${PKG_VER}_${ARCH}.ipk"
 
@@ -33,8 +33,24 @@ cp -a "$IPK/files/opt/." "$STAGE/data/opt/"
 rm -rf "$STAGE/data/opt/share/keengen/www"
 cp -a "$WEB" "$STAGE/data/opt/share/keengen/www"
 rm -f "$STAGE/data/opt/sbin/.gitkeep"
-# Entware rejects shebangs with CR (#!/bin/sh\r → "not found"). Strip CR from scripts.
-find "$STAGE/data" \( -path '*/init.d/*' -o -name '*.sh' \) -type f -exec sed -i 's/\r$//' {} +
+# Entware rejects shebangs with CR (#!/bin/sh\r → "not found").
+# Sourced conf with CR breaks KEENGEN_WWW=...\r. Strip CR from all staged text
+# (skip mipsel binary only). Git Bash sed -i is unreliable on Windows — use Python.
+STAGE_DATA="$STAGE/data" python3 - <<'PY'
+import os
+from pathlib import Path
+root = Path(os.environ["STAGE_DATA"])
+n = 0
+for p in root.rglob("*"):
+    if not p.is_file() or p.name == "keengen-httpd":
+        continue
+    raw = p.read_bytes()
+    if b"\r" not in raw:
+        continue
+    p.write_bytes(raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+    n += 1
+print("stripped CR from", n, "files")
+PY
 # Match stock Entware modes (dirs/exec 755, data files 644).
 find "$STAGE/data" -type d -exec chmod 755 {} +
 find "$STAGE/data" -type f -exec chmod 644 {} +

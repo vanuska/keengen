@@ -148,7 +148,7 @@ def check_updates(auth: dict | None = None) -> dict:
                 if rv:
                     out["router_version"] = rv
             except json.JSONDecodeError:
-                # opkg list-installed: "keengen - 0.1.0-2"
+                # opkg list-installed: "keengen - 0.1.0-3"
                 if "keengen" in text:
                     parts = text.replace("-", " ").split()
                     for p in parts:
@@ -497,8 +497,47 @@ def _sftp_download_tree(sftp, remote: str, local: Path) -> int:
     return count
 
 
+def _ssh_download_tree(auth: dict, remote: str, local: Path) -> int:
+    """Download remote dir via SSH find+cat (no SFTP, no router tar -c)."""
+    remote = remote.rstrip("/")
+
+    def sh_quote(path: str) -> str:
+        return "'" + path.replace("'", "'\"'\"'") + "'"
+
+    code, out, err = ssh_exec(
+        auth,
+        "find %s -type f 2>/dev/null | sort" % sh_quote(remote),
+        timeout=60,
+    )
+    if code != 0:
+        raise RuntimeError("find-failed:%s" % (err or out.decode("utf-8", "replace")[:200]))
+    paths = [
+        ln.strip()
+        for ln in out.decode("utf-8", "replace").splitlines()
+        if ln.strip()
+    ]
+    count = 0
+    for rpath in paths:
+        if not rpath.startswith(remote + "/") and rpath != remote:
+            continue
+        rel = rpath[len(remote) :].lstrip("/")
+        if not rel or ".." in rel.split("/"):
+            continue
+        lpath = local / rel
+        lpath.parent.mkdir(parents=True, exist_ok=True)
+        code, data, cerr = ssh_exec(auth, "cat %s" % sh_quote(rpath), timeout=90)
+        if code != 0:
+            raise RuntimeError("cat-failed:%s:%s" % (rpath, cerr))
+        lpath.write_bytes(data)
+        count += 1
+    return count
+
+
 def pull_router_backup(auth: dict, remote_dir: str, stamp: str) -> tuple[bool, str]:
-    """SFTP-download remote backup dir; pack configs.tgz on the PC (BusyBox tar has no -c)."""
+    """Pull remote backup dir to PC and pack configs.tgz (BusyBox tar has no -c).
+
+    Prefer SFTP when available; fall back to SSH find+cat (Dropbear often has no SFTP).
+    """
     import tarfile
 
     dest_dir = _backup_dir(stamp)
@@ -509,37 +548,61 @@ def pull_router_backup(auth: dict, remote_dir: str, stamp: str) -> tuple[bool, s
         shutil.rmtree(tree_dir, ignore_errors=True)
     tree_dir.mkdir(parents=True, exist_ok=True)
 
+    remote_dir = remote_dir.rstrip("/")
+
+    def sh_quote(path: str) -> str:
+        return "'" + path.replace("'", "'\"'\"'") + "'"
+
+    # Marker so empty trees still produce a valid archive.
+    ssh_exec(
+        auth,
+        "touch %s/.keengen-backup 2>/dev/null || true" % sh_quote(remote_dir),
+        timeout=15,
+    )
+
+    nfiles = 0
+    method = "ssh"
+    sftp_err = ""
     client = _ssh_client(auth)
     try:
-        sftp = client.open_sftp()
         try:
+            sftp = client.open_sftp()
             try:
-                sftp.stat(remote_dir)
-            except OSError as exc:
-                return False, "remote-missing:%s" % exc
-            # Marker file so empty trees still produce a valid archive.
-            marker = remote_dir.rstrip("/") + "/.keengen-backup"
-            try:
-                with sftp.file(marker, "w") as fh:
-                    fh.write(b"")
-            except OSError:
-                pass
-            nfiles = _sftp_download_tree(sftp, remote_dir, tree_dir)
-        finally:
-            sftp.close()
-    except Exception as exc:  # noqa: BLE001 — surface any SFTP/SSH failure to caller
-        return False, "sftp-failed:%s" % exc
+                try:
+                    sftp.stat(remote_dir)
+                except OSError as exc:
+                    return False, "remote-missing:%s" % exc
+                nfiles = _sftp_download_tree(sftp, remote_dir, tree_dir)
+                method = "sftp"
+            finally:
+                sftp.close()
+        except Exception as exc:  # noqa: BLE001 — Dropbear often has no SFTP subsystem
+            sftp_err = str(exc)
+            method = "ssh"
     finally:
         client.close()
 
+    if method == "ssh":
+        try:
+            import shutil
+
+            shutil.rmtree(tree_dir, ignore_errors=True)
+            tree_dir.mkdir(parents=True, exist_ok=True)
+            # Ensure remote exists before find+cat.
+            code, _out, err = ssh_exec(auth, "test -d %s" % sh_quote(remote_dir), timeout=15)
+            if code != 0:
+                return False, "remote-missing:%s" % (err or sftp_err or "no-dir")
+            nfiles = _ssh_download_tree(auth, remote_dir, tree_dir)
+        except Exception as exc:  # noqa: BLE001
+            return False, "ssh-pull-failed:%s (sftp:%s)" % (exc, sftp_err or "-")
+
     tgz = dest_dir / "configs.tgz"
     with tarfile.open(tgz, "w:gz", format=tarfile.USTAR_FORMAT) as tar:
-        # Archive contents of router-tree (configs/, xkeen/, …) at archive root.
         for child in sorted(tree_dir.iterdir()):
             tar.add(child, arcname=child.name)
     if not tgz.is_file() or tgz.stat().st_size < 20:
         return False, "empty-local-tgz"
-    return True, "%s (files=%d)" % (tgz, nfiles)
+    return True, "%s (files=%d via=%s)" % (tgz, nfiles, method)
 
 
 def list_local_backups() -> dict:

@@ -7,7 +7,17 @@ CONF=/opt/etc/keengen/keengen.conf
 BIN=/opt/sbin/keengen-httpd
 PID=/opt/var/run/keengen-httpd.pid
 
-[ -f "$CONF" ] && . "$CONF"
+# Strip CR so CRLF conf (Windows-built IPK) does not break [ -d "$KEENGEN_WWW" ].
+if [ -f "$CONF" ]; then
+	if command -v tr >/dev/null 2>&1; then
+		eval "$(tr -d '\r' < "$CONF")"
+	elif command -v sed >/dev/null 2>&1; then
+		eval "$(sed 's/\r$//' "$CONF")"
+	else
+		# shellcheck disable=SC1090
+		. "$CONF"
+	fi
+fi
 KEENGEN_BIND=${KEENGEN_BIND:-0.0.0.0}
 KEENGEN_PORT=${KEENGEN_PORT:-1001}
 KEENGEN_WWW=${KEENGEN_WWW:-/opt/share/keengen/www}
