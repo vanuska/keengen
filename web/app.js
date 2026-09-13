@@ -1728,9 +1728,22 @@
       showErr("");
       showIpkErr("");
       if (ipkStatus) ipkStatus.textContent = t("ipkBusy");
+      var ipkUiLink = document.getElementById("ipkUiLink");
+      if (ipkUiLink) {
+        ipkUiLink.hidden = true;
+        ipkUiLink.removeAttribute("href");
+      }
       if (ipkLog) {
         ipkLog.hidden = true;
         ipkLog.textContent = "";
+      }
+      var uiWin = null;
+      try { uiWin = window.open("about:blank", "_blank"); } catch (eOpenPre) { uiWin = null; }
+      function closeUiWin() {
+        if (uiWin && !uiWin.closed) {
+          try { uiWin.close(); } catch (eClose) { /* ignore */ }
+        }
+        uiWin = null;
       }
       const payload = localEntware ? {} : {
         host: auth.host,
@@ -1765,6 +1778,7 @@
           return null;
         }
         if (!x.r.ok || !j.ok) {
+          closeUiWin();
           paintIpkLog();
           var fail = lastFailStep();
           var detail = fail && fail.detail ? String(fail.detail).replace(/\s+/g, " ").trim() : "";
@@ -1784,15 +1798,35 @@
         const ver = j.installed_version || (ipkInfo && ipkInfo.latest_version) || "";
         var uiUrl = j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/");
         var bakStamp = backupStampFrom(j);
-        try { window.open(uiUrl, "_blank"); } catch (eOpen) { /* ignore popup block */ }
+        var opened = false;
+        if (uiWin && !uiWin.closed) {
+          try {
+            uiWin.location.href = uiUrl;
+            opened = true;
+          } catch (eNav) {
+            opened = false;
+          }
+        }
+        if (!opened) closeUiWin();
+        if (ipkUiLink) {
+          if (opened) {
+            ipkUiLink.hidden = true;
+            ipkUiLink.removeAttribute("href");
+          } else {
+            ipkUiLink.href = uiUrl;
+            ipkUiLink.textContent = t("ipkOpenUi");
+            ipkUiLink.hidden = false;
+          }
+        }
         if (ipkStatus) {
-          var okMsg = ver ? t("ipkOkOpen", ver) : t("ipkOk", ver, uiUrl);
+          var okMsg = opened ? t("ipkOkOpen", ver) : t("ipkOk", ver, uiUrl);
           ipkStatus.textContent = bakStamp ? (okMsg + " · " + t("bakMadeShort", bakStamp)) : okMsg;
         }
         if (bakStamp) showBakNotice(bakStamp);
         refreshIpkPanel();
         refreshBackupList();
       }).catch(function (e) {
+        closeUiWin();
         if (ipkLog) {
           ipkLog.hidden = true;
           ipkLog.textContent = "";
