@@ -17,6 +17,7 @@ var KG_I18N={
   themeChip:'🎨 тема',
   langTitle:'Язык',
   h1:'1. Ссылки и файлы',
+  infoTip:'Подсказка',
   note1:'«Прочитать с Keenetic» сразу показывает подключения в секции 2. Активное в таблице пишется в 05_routing. «Залить» / правый клик по вкладке — запись на роутер после входа. «Прочитать ссылки» — только поле ниже.',
   authBtn:'Настройка входа',readBtn:'Прочитать с Keenetic',whereWait:'Проверяю, дома ли вы…',
   ipkTitle:'Установить / обновить keengen на Keenetic (Entware)',
@@ -35,7 +36,7 @@ var KG_I18N={
   bakTitle:'Локальные бэкапы (на ПК)',
   bakHint:'Бэкап конфигов всегда при «Прочитать» и при установке IPK (папка backups/ на этом ПК). Restore — с ПК под root SSH. «Удалить IPK» только в keengen на ПК, не в keengen на Keenetic (:1001).',
   bakPick:'Слепок',
-  bakRefresh:'Обновить список',
+  bakRefresh:'Обновить список бэкапов',
   bakRestoreCfg:'Restore конфиги',
   bakRestoreIpk:'Restore IPK',
   bakRemoveIpk:'Удалить IPK',
@@ -51,7 +52,8 @@ var KG_I18N={
   bakMade:'резервная копия: {0}',
   bakMadeShort:'✓ бэкап {0}',
   linksLbl:'Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Встроенная проверка ссылок и JSON: битое не попадает; живые 03/04/05 не затираются целиком. 01, 02, 06 и .lst от «Прочитать ссылки» сами не меняются.',
-  drop:'Одна настройка за раз: нажмите или перетащите QR, .txt, JSON со ссылками — или вставьте текст JSON 01–06 либо .lst (ip_exclude / port_exclude / port_proxying / xkeen). Формат распознается автоматически.',
+  drop:'Нажмите или перетащите файл / QR',
+  dropHint:'Одна настройка за раз: QR, .txt, JSON со ссылками или текст JSON 01–06 / .lst (ip_exclude / port_exclude / port_proxying / xkeen). Формат распознаётся автоматически.',
   clearBtn:'Очистить поле',parseBtn:'Прочитать ссылки',
   h2:'2. Outbound и routing',hintEmpty:'Пока пусто. Вставьте ссылки или QR.',
   thActive:'активное',thName:'имя',thServer:'сервер',thProto:'протокол',
@@ -151,6 +153,7 @@ var KG_I18N={
   themeChip:'🎨 theme',
   langTitle:'Language',
   h1:'1. Links and files',
+  infoTip:'Info',
   note1:'“Read from Keenetic” fills connections in section 2. The active row is written to 05_routing. “Write” / right-click a tab uploads after login. “Read links” only fills the box below.',
   authBtn:'Login settings',readBtn:'Read from Keenetic',whereWait:'Checking if you are at home…',
   ipkTitle:'Install / update keengen on Keenetic (Entware)',
@@ -169,7 +172,7 @@ var KG_I18N={
   bakTitle:'Local backups (on PC)',
   bakHint:'Config backup always runs on Read and on IPK install (backups/ on this PC). Restore needs root SSH from keengen on PC. “Remove IPK” only in keengen on PC — not in keengen on Keenetic (:1001).',
   bakPick:'Snapshot',
-  bakRefresh:'Refresh list',
+  bakRefresh:'Refresh backup list',
   bakRestoreCfg:'Restore configs',
   bakRestoreIpk:'Restore IPK',
   bakRemoveIpk:'Remove IPK',
@@ -185,7 +188,8 @@ var KG_I18N={
   bakMade:'backup saved: {0}',
   bakMadeShort:'✓ backup {0}',
   linksLbl:'Paste share links or a tab JSON, then “Read links”. Built-in link and JSON check: broken input is rejected; live 03/04/05 are not wiped wholesale. 01, 02, 06 and .lst are not changed by “Read links” themselves.',
-  drop:'One setting at a time: click or drop a QR, .txt, JSON with links — or paste JSON 01–06 / .lst (ip_exclude / port_exclude / port_proxying / xkeen). The format is detected automatically.',
+  drop:'Click or drop a file / QR',
+  dropHint:'One setting at a time: QR, .txt, JSON with links, or paste JSON 01–06 / .lst (ip_exclude / port_exclude / port_proxying / xkeen). Format is detected automatically.',
   clearBtn:'Clear box',parseBtn:'Read links',
   h2:'2. Outbound and routing',hintEmpty:'Empty for now. Paste links or a QR.',
   thActive:'active',thName:'name',thServer:'server',thProto:'protocol',
@@ -293,6 +297,8 @@ function kgApplyLang(){
   var k=el.getAttribute('data-i18n');if(k)el.textContent=kgT(k);});
  document.querySelectorAll('[data-i18n-title]').forEach(function(el){
   var k=el.getAttribute('data-i18n-title');if(k)el.title=kgT(k);});
+ document.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+  var k=el.getAttribute('data-i18n-aria');if(k)el.setAttribute('aria-label',kgT(k));});
  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
   var k=el.getAttribute('data-i18n-placeholder');if(k)el.placeholder=kgT(k);});
  var lb=document.getElementById('langBtn');

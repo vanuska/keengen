@@ -30,12 +30,37 @@ textarea:focus{border-color:var(--accent);
 box-shadow:0 0 0 3.5px rgba(10,132,255,.22);
 box-shadow:0 0 0 3.5px color-mix(in srgb,var(--accent) 22%,transparent)}
 html[data-theme=dark] textarea{background:#1c202b;color:var(--ink);border-color:#333a49}
-.drop{border:1px dashed var(--line);border-radius:12px;padding:18px;text-align:center;
-color:var(--ink2);cursor:pointer;background:var(--glassb);margin-top:10px;font-size:13px;line-height:1.45}
-.drop.over{border-color:var(--accent);color:var(--accent)}
+.drop{border:1.5px dashed color-mix(in srgb,var(--line) 85%,transparent);border-radius:12px;
+padding:16px 14px;text-align:center;color:var(--ink3);cursor:pointer;background:transparent;
+margin-top:10px;font-size:13.5px;font-weight:550;line-height:1.4;
+transition:border-color .15s,color .15s,background .15s}
+.drop:hover,.drop:focus{border-color:var(--accent);color:var(--ink2);
+background:color-mix(in srgb,var(--glassb) 55%,transparent);outline:none}
+.drop.over{border-color:var(--accent);color:var(--accent);
+background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .path{font-family:ui-monospace,Consolas,monospace;color:var(--accent)}
 .hint{color:var(--ink2);font-size:13px;margin:0 0 10px}
 .hint.okish{color:var(--ink);font-weight:650}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+margin:0 0 12px;position:relative}
+.sec-head > h2,.sec-head > .ipk-title{margin:0;flex:1;min-width:0}
+.card .sec-head > h2{margin:0;font-size:16px;font-weight:650}
+.ipk-install > .sec-head,.ipk-restore > .sec-head{margin:0 0 8px}
+.info-tip{position:relative;flex:none;margin:0}
+.info-tip > summary{list-style:none;cursor:pointer;box-sizing:border-box;
+width:18px;height:18px;border-radius:50%;border:1px solid var(--line);color:var(--ink3);
+display:inline-flex;align-items:center;justify-content:center;
+font:700 11px/1 Georgia,"Times New Roman",serif;background:transparent;user-select:none;
+padding:0}
+.info-tip > summary::-webkit-details-marker{display:none}
+.info-tip > summary:hover{border-color:var(--ink2);color:var(--ink2)}
+.info-tip[open] > summary{border-color:var(--accent);color:var(--accent)}
+.info-tip-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:40;
+width:min(340px,calc(100vw - 48px));padding:10px 12px;border-radius:12px;
+background:var(--glass);border:1px solid var(--glassb);box-shadow:var(--shadow);
+backdrop-filter:blur(24px);font-size:12.5px;line-height:1.45;color:var(--ink2)}
+.info-tip-panel p{margin:0 0 8px}
+.info-tip-panel p:last-child{margin:0}
 .tblwrap table{min-width:0 !important;table-layout:auto}
 .tblwrap .col-on,.tblwrap td:first-child{width:36px;max-width:40px;padding-left:6px;padding-right:4px}
 .tblwrap td:first-child{text-align:center}
@@ -69,7 +94,7 @@ cursor:pointer;font-family:inherit;backdrop-filter:blur(24px);transition:color .
 box-shadow:0 4px 14px rgba(0,100,224,.35)}
 .tab:not(.on):hover{color:var(--ink)}
 .ipk-install{margin:0 0 14px;padding:12px;border:1px solid var(--glassb);border-radius:14px;background:var(--glass)}
-.ipk-title{margin:0 0 6px;font-size:15px;font-weight:700;color:var(--ink)}
+.ipk-title{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .ipk-log{margin:10px 0 0;max-height:220px;font-size:11px}
 .ipk-log[hidden]{display:none !important}
 .tab-menu{position:fixed;z-index:90;min-width:200px;padding:6px;
@@ -117,7 +142,8 @@ padding:12px;border:1px solid var(--glassb);border-radius:14px;background:var(--
 .btn:disabled,.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none;box-shadow:none}
 .btn:disabled:hover,.btn[disabled]:hover{filter:none}
 .card h2{margin:0 0 12px;font-size:16px;font-weight:650}
-.card-preview{margin-top:16px}
+.card-preview{margin-top:16px;overflow:visible}
+.card-preview > .sec-head{margin:0 0 12px}
 ol.howto{margin:0;padding-left:22px;color:var(--ink);line-height:1.55}
 ol.howto li{margin:0 0 10px}
 ol.howto code,.card code{font-size:12.5px}
