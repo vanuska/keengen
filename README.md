@@ -172,6 +172,8 @@ Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публи
 
 - ipk на Entware/dropbear.
 
+## Остальное
+
 Архитектура: [docs/architecture.md](docs/architecture.md).  
 Безопасность: [SECURITY.md](SECURITY.md).
 
