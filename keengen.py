@@ -46,6 +46,11 @@ INSTALL_TIMEOUT = 120
 GITHUB_REPO = "vanuska/keengen"
 # Stable name on each Release (also versioned keengen_X.Y.Z-1_mipsel-3.4.ipk).
 IPK_ASSET_STABLE = "keengen_mipsel-3.4.ipk"
+IPK_STABLE_URL = (
+    "https://github.com/%s/releases/latest/download/%s" % (GITHUB_REPO, IPK_ASSET_STABLE)
+)
+_TAG_IN_URL_RE = re.compile(r"/releases/download/(v?[\w.-]+)/")
+_VER_IN_IPK_RE = re.compile(r"keengen_(\d+\.\d+\.\d+)(?:-\d+)?_mipsel", re.I)
 
 
 def app_version() -> str:
@@ -59,26 +64,135 @@ def app_version() -> str:
     return "0.0.0"
 
 
+def _github_headers(*, api: bool = True) -> dict:
+    headers = {
+        "User-Agent": "keengen/%s" % app_version(),
+        "Accept": "application/vnd.github+json" if api else "*/*",
+    }
+    token = (
+        os.environ.get("KEENGEN_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
+    ).strip()
+    if token:
+        headers["Authorization"] = "Bearer %s" % token
+    return headers
+
+
 def _http_json(url: str, timeout: int = 20) -> dict:
     import urllib.error
     import urllib.request
 
-    req = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "keengen/%s" % app_version(),
-        },
-    )
+    req = urllib.request.Request(url, headers=_github_headers(api=True))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError("github-http-%d" % int(exc.code)) from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError("github-failed:%s" % exc) from exc
 
 
-def resolve_latest_release() -> dict:
-    """Return {tag, version, ipk_url, ipk_name} for latest GitHub Release."""
+def _version_from_download_url(url: str) -> tuple[str, str]:
+    """Best-effort (tag, version) from a GitHub release download / redirect URL."""
+    m = _TAG_IN_URL_RE.search(url or "")
+    if m:
+        tag = m.group(1).strip()
+        ver = tag[1:] if tag.startswith("v") else tag
+        if "-" in ver and ver.split("-", 1)[0][0:1].isdigit():
+            ver = ver.split("-", 1)[0]
+        return (tag if tag.startswith("v") else "v%s" % ver), ver
+    m = _VER_IN_IPK_RE.search(url or "")
+    if m:
+        ver = m.group(1)
+        return "v%s" % ver, ver
+    return "latest", app_version()
+
+
+def _probe_stable_ipk_url(timeout: int = 20) -> dict:
+    """Resolve latest IPK without GitHub API (releases/latest/download)."""
+    import urllib.error
+    import urllib.request
+
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+            return None
+
+    headers = _github_headers(api=False)
+    opener = urllib.request.build_opener(_NoRedirect)
+    version_hint = IPK_STABLE_URL
+    ok = False
+
+    for method in ("HEAD", "GET"):
+        req = urllib.request.Request(IPK_STABLE_URL, method=method, headers=headers)
+        try:
+            with opener.open(req, timeout=timeout) as resp:
+                code = getattr(resp, "status", None) or 200
+                if int(code) < 400:
+                    ok = True
+                    version_hint = resp.geturl() or IPK_STABLE_URL
+                    if method == "GET":
+                        _ = resp.read(64)
+                    break
+                if int(code) >= 400 and method == "HEAD":
+                    continue
+                raise RuntimeError("github-http-%d" % int(code))
+        except urllib.error.HTTPError as exc:
+            # First hop is usually 302 → /releases/download/vX.Y.Z/…
+            if int(exc.code) in (301, 302, 303, 307, 308):
+                loc = (exc.headers.get("Location") or "").strip()
+                if loc:
+                    version_hint = loc
+                # Confirm the stable URL is reachable (follow redirects).
+                try:
+                    follow = urllib.request.Request(
+                        IPK_STABLE_URL, method=method, headers=headers
+                    )
+                    with urllib.request.urlopen(follow, timeout=timeout) as resp:
+                        if method == "GET":
+                            _ = resp.read(64)
+                        code = getattr(resp, "status", None) or 200
+                        if int(code) >= 400:
+                            raise RuntimeError("github-http-%d" % int(code))
+                        ok = True
+                        # Prefer redirect Location for version; keep CDN geturl as secondary.
+                        if not _TAG_IN_URL_RE.search(version_hint) and not _VER_IN_IPK_RE.search(
+                            version_hint
+                        ):
+                            version_hint = resp.geturl() or version_hint
+                        break
+                except urllib.error.HTTPError as exc2:
+                    if method == "HEAD" and int(exc2.code) in (403, 404, 405, 501):
+                        continue
+                    raise RuntimeError("github-http-%d" % int(exc2.code)) from exc2
+                except (urllib.error.URLError, TimeoutError) as exc2:
+                    raise RuntimeError("github-failed:%s" % exc2) from exc2
+            elif method == "HEAD" and int(exc.code) in (403, 404, 405, 501):
+                continue
+            else:
+                raise RuntimeError("github-http-%d" % int(exc.code)) from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            if method == "HEAD":
+                continue
+            raise RuntimeError("github-failed:%s" % exc) from exc
+
+    if not ok:
+        raise RuntimeError("github-failed:stable-url-unreachable")
+
+    tag, version = _version_from_download_url(version_hint)
+    ipk_name = IPK_ASSET_STABLE
+    full = re.search(r"(keengen_[\w.-]+\.ipk)", version_hint or "", re.I)
+    if full:
+        ipk_name = full.group(1)
+    return {
+        "tag": tag,
+        "version": version,
+        "ipk_name": ipk_name if ipk_name.endswith(".ipk") else IPK_ASSET_STABLE,
+        "ipk_url": IPK_STABLE_URL,
+        "source": "stable-url",
+    }
+
+
+def _resolve_via_api() -> dict:
+    """Return {tag, version, ipk_url, ipk_name} from GitHub Releases API."""
     data = _http_json("https://api.github.com/repos/%s/releases/latest" % GITHUB_REPO)
     tag = str(data.get("tag_name") or "").strip()
     version = tag[1:] if tag.startswith("v") else tag
@@ -104,7 +218,27 @@ def resolve_latest_release() -> dict:
         "version": version or app_version(),
         "ipk_name": chosen[0],
         "ipk_url": chosen[1],
+        "source": "api",
     }
+
+
+def resolve_latest_release() -> dict:
+    """Return {tag, version, ipk_url, ipk_name} for latest GitHub Release.
+
+    Prefers the Releases API; on 403/429/any failure falls back to the stable
+    ``releases/latest/download`` URL (no API quota).
+    """
+    api_err: Exception | None = None
+    try:
+        return _resolve_via_api()
+    except RuntimeError as exc:
+        api_err = exc
+    try:
+        return _probe_stable_ipk_url()
+    except RuntimeError as direct_err:
+        raise RuntimeError(
+            "resolve-failed:api=%s;direct=%s" % (api_err, direct_err)
+        ) from direct_err
 
 
 def check_updates(auth: dict | None = None) -> dict:
@@ -119,6 +253,7 @@ def check_updates(auth: dict | None = None) -> dict:
             "service": "keengen",
         }
     remote_ver = latest["version"]
+    ver_known = bool(remote_ver) and remote_ver not in ("latest", "0.0.0")
     out = {
         "ok": True,
         "service": "keengen",
@@ -127,10 +262,11 @@ def check_updates(auth: dict | None = None) -> dict:
         "latest_tag": latest["tag"],
         "ipk_url": latest["ipk_url"],
         "ipk_name": latest["ipk_name"],
-        "app_update": _ver_tuple(remote_ver) > _ver_tuple(local),
+        "app_update": ver_known and _ver_tuple(remote_ver) > _ver_tuple(local),
         "router_version": None,
         "router_installed": False,
         "ipk_update": False,
+        "resolve_source": latest.get("source") or "api",
     }
     if auth:
         code, body, _err = ssh_exec(
@@ -148,7 +284,6 @@ def check_updates(auth: dict | None = None) -> dict:
                 if rv:
                     out["router_version"] = rv
             except json.JSONDecodeError:
-                # opkg list-installed: "keengen - 0.1.0-3"
                 if "keengen" in text:
                     parts = text.replace("-", " ").split()
                     for p in parts:
@@ -156,7 +291,7 @@ def check_updates(auth: dict | None = None) -> dict:
                             out["router_version"] = p.split("-")[0]
                             break
             rv = out.get("router_version") or "0"
-            out["ipk_update"] = _ver_tuple(remote_ver) > _ver_tuple(rv)
+            out["ipk_update"] = ver_known and _ver_tuple(remote_ver) > _ver_tuple(rv)
     return out
 
 

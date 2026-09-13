@@ -133,7 +133,7 @@ BusyBox на Entware без `tar -c`: слепок на ПК собирает ke
 
 - Ассет latest: `https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk`
 - Из UI на ПК: кнопка «Установить / Обновить IPK» (качает GitHub по HTTPS на ПК — busybox `wget` на Entware часто без SSL).
-- При открытии / F5 UI **проверяет** GitHub latest и показывает «Обновить IPK…», если на роутере старше. Автоустановки нет — нужен клик по кнопке.
+- При открытии / F5 UI **проверяет** GitHub latest и показывает «Обновить IPK…», если на роутере старше. Автоустановки нет — нужен клик по кнопке. GitHub API без токена может отвечать 403 (лимит); установка тогда идёт через `releases/latest/download` (без API). Опционально: `KEENGEN_GITHUB_TOKEN`.
 - Сборка и one-liner: [ipk.md](ipk.md).
 
 ## Что не класть в git
