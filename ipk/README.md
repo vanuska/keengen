@@ -1,6 +1,6 @@
 # keengen IPK (Entware)
 
-Ветка `keengen-ipk`. Пакет **0.1.0-1** для `mipsel-3.4`: статика + `keengen-httpd`.
+Пакет **0.1.0-1** для `mipsel-3.4`: статика + `keengen-httpd` (ветка **`main`**).
 
 Подробности: [docs/ipk.md](../docs/ipk.md). Исходник helper: [src/](src/).
 

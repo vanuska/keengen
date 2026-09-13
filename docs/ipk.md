@@ -1,6 +1,6 @@
 # keengen на Entware (IPK)
 
-Ветка git: `keengen-ipk`. JSON 01–06: [howto.md](howto.md).
+Пакет ставит UI + `keengen-httpd` на порт **1001**. JSON 01–06 и сценарии: [howto.md](howto.md), обзор: [README](../README.md).
 
 ## Что в пакете `0.1.0-1`
 
@@ -12,20 +12,24 @@
 | Conf | `/opt/etc/keengen/keengen.conf` (порт **1001**) |
 
 API совместим с веб-UI: `/api/keenetic/where|probe|read|write`, но без SSH —
-файлы читаются/пишутся локально. Бэкап: `/tmp/keengen-backup-*`.
+файлы читаются/пишутся локально. Бэкап при Apply: `/tmp/keengen-backup-*`.
+При «Прочитать» — слепок на роутере (обычно `/opt/backup/keengen-…`).
 
 XKeen-UI остаётся на **:1000**. keengen — на **:1001**.
 
-## Сборка (на Linux / agentbox)
+Секция «Локальные бэкапы (на ПК)», Restore и «Удалить IPK» на `:1001` **скрыты** — снимать пакет нужно с keengen на ПК или вручную по SSH.
+
+## Сборка (на Linux / WSL)
 
 ```bash
-cd keengen-public   # ветка keengen-ipk
+cd keengen   # ветка main
 cd ipk/src/keengen-httpd
 GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
   go build -trimpath -ldflags='-s -w' -o ../../files/opt/sbin/keengen-httpd .
 cd ../../..
 bash ipk/scripts/build-ipk.sh
 # → dist/keengen_0.1.0-1_mipsel-3.4.ipk
+# → dist/keengen_mipsel-3.4.ipk  (то же содержимое, стабильное имя для latest)
 ```
 
 ## Формат `.ipk`
@@ -37,32 +41,38 @@ Entware (bin.entware.net) ждёт **gzip(tar)** с членами
 
 ## Установка
 
-### Из keengen на ПК
+### Из keengen на ПК (рекомендуется)
 
-`POST /api/keenetic/install-ipk` (только keengen на ПК / Python): SSH как **root** →
-бэкап → wget Release → `opkg install` → `S99keengen start` → health `:1001`.
-В UI: секция «Установить keengen на Keenetic» после «Настройка входа».
+`POST /api/keenetic/install-ipk` (только Python / keengen на ПК): SSH как **root** →
+бэкап → HTTPS-скачивание Release на ПК → `opkg install` → `S99keengen start` → health `:1001`.
+В UI: кнопка после «Настройка входа» (логин **root**).
 
-Кратко для пользователя: [README.md](../README.md) → «Установка на Keenetic (Entware IPK)».
-
-**Уже в SSH (Dropbear)** — busybox `wget` на Entware часто **без HTTPS**. Лучше ставить из локального UI (скачивает на ПК). Если есть `curl`:
+На самом роутере busybox `wget` часто **без HTTPS** — one-liner через wget с GitHub обычно не сработает. Если есть `curl`:
 
 ```sh
-curl -fsSL -o /tmp/keengen_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" && opkg install /tmp/keengen_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
+curl -fsSL -o /tmp/keengen_mipsel-3.4.ipk \
+  "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" \
+  && opkg install /tmp/keengen_mipsel-3.4.ipk \
+  && /opt/etc/init.d/S99keengen start
 ```
 
-**С ПК через scp:**
+### С ПК через scp
 
 ```sh
-scp dist/keengen_0.1.0-1_mipsel-3.4.ipk root@192.168.1.1:/tmp/
+scp dist/keengen_mipsel-3.4.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
-opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
+opkg install /tmp/keengen_mipsel-3.4.ipk
 /opt/etc/init.d/S99keengen start
 # браузер: http://<LAN-IP>:1001/
 ```
 
-В UI: «Настройка входа» → Save (local-режим: probe без SSH) → «Прочитать» / «Залить».
-Бэкап перед записью: `/tmp/keengen-backup-*`. XKeen-UI на `:1000` не трогаем.
+В UI на `:1001`: «Настройка входа» → Save (local-режим: probe без SSH) → «Прочитать» / «Залить».
+
+### Остановка и снятие
+
+**С keengen на ПК:** кнопка «Удалить IPK» (бэкап → stop → `opkg remove`).
+
+**Вручную:**
 
 ```sh
 /opt/etc/init.d/S99keengen stop

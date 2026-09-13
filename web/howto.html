@@ -14,15 +14,16 @@
   <div class="hrow">
     <div>
       <h1><span class="logo" aria-hidden="true">📖</span>Как пользоваться</h1>
-      <p class="sub">keengen кормит XKeen-UI файлами 01–06. Полный текст — в README репозитория.</p>
+      <p class="sub">Два режима: keengen на ПК и keengen на Keenetic. Полный текст — в README репозитория.</p>
     </div>
   </div>
   <section class="card">
     <ol class="howto">
       <li>Вставьте share-ссылки <code>vless://</code> / <code>hy2://</code> (не <code>https://</code> подписку).</li>
-      <li>Нажмите «Прочитать ссылки». Radio слева — какой тег пойдёт в <code>05_routing.json</code>.</li>
-      <li>«Скачать все файлы разом» → ZIP. В XKeen-UI положите JSON в <code>/opt/etc/xray/configs/</code> и restart.</li>
-      <li>Читать и заливать на роутер по SSH можно только если открыт keengen на ПК: <code>python keengen.py</code> → <code>http://127.0.0.1:8765/</code>.</li>
+      <li>«Прочитать ссылки». Radio слева — какой тег пойдёт в <code>05_routing.json</code>.</li>
+      <li>«Скачать все файлы разом» → ZIP в <code>/opt/etc/xray/configs/</code> и restart XKeen — либо «Залить» с ПК / с Keenetic.</li>
+      <li><strong>keengen на ПК:</strong> <code>start.bat</code> / <code>python3 start.py</code> → <code>http://127.0.0.1:8765/</code> — SSH, бэкапы, установка и снятие IPK.</li>
+      <li><strong>keengen на Keenetic:</strong> IPK с GitHub Releases → <code>http://&lt;router&gt;:1001/</code> рядом с XKeen-UI на <code>:1000</code>. Restore / «Удалить IPK» — только с ПК.</li>
     </ol>
     <p><a class="chip" href="index.html">← к генератору</a></p>
   </section>

@@ -4,7 +4,7 @@
 
 Работает в браузере (статика) или как **keengen на ПК** на Windows / Linux / macOS. На Keenetic с Entware можно поставить пакет **IPK** — тот же UI как **keengen на Keenetic**.
 
-> **Статус.** Функции Entware IPK, локальных бэкапов и keengen на ПК для установки пакета живут в ветке **`keengen-ipk`**. Основной поток разработки IPK — там; перед продакшен-релизом сверяйте тег/Release.
+Основная ветка — **`main`** (IPK, бэкапы, keengen на ПК и на Keenetic). Релизный пакет: [GitHub Releases](https://github.com/vanuska/keengen/releases/latest).
 
 Совместим с панелью [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). keengen **не заменяет** XKeen-UI: панель XKeen остаётся на порту **1000**, keengen на Keenetic (если установлен IPK) — на **1001**.
 
@@ -45,7 +45,6 @@
 ```bash
 git clone https://github.com/vanuska/keengen.git
 cd keengen
-git checkout keengen-ipk   # пока IPK и бэкапы в этой ветке
 python3 start.py
 ```
 
@@ -146,7 +145,7 @@ Hysteria2 в Xray — с **v26.1.23**. Старый Xray JSON примет, яд
 Пакет ставит UI + бинарный `keengen-httpd` на порт **1001**.  
 XKeen-UI на **:1000** не трогается. После установки SSH с ПК для повседневной правки конфигов не обязателен.
 
-Сборка и пути: [docs/ipk.md](docs/ipk.md) (ветка `keengen-ipk`).
+Сборка и пути: [docs/ipk.md](docs/ipk.md).
 
 ### Что нужно
 
@@ -311,7 +310,7 @@ Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) публи
 |---|---|
 | [docs/howto.md](docs/howto.md) | пошагово: ссылки, ZIP, SSH |
 | [docs/ipk.md](docs/ipk.md) | сборка и установка Entware IPK |
-| [docs/architecture.md](docs/architecture.md) | схема keengen на ПК / статика / ветка IPK |
+| [docs/architecture.md](docs/architecture.md) | схема keengen на ПК / статика / IPK |
 | [SECURITY.md](SECURITY.md) | пароли, bind, что не коммитить |
 
 ---
