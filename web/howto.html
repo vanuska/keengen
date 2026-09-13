@@ -5,25 +5,52 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Как пользоваться · keengen</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233aa0ff'/%3E%3Cstop offset='1' stop-color='%230064e0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='58' font-size='52' text-anchor='middle' fill='%23fff' font-family='system-ui,sans-serif' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
-  <script src="theme.js?v=1"></script>
+  <script src="theme.js?v=6"></script>
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
-<body>
+<body class="howto-page">
   <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="blob b3"></div><div class="blob b4"></div>
   <div class="hrow">
     <div>
-      <h1><span class="logo" aria-hidden="true">📖</span>Как пользоваться</h1>
-      <p class="sub">Два режима: keengen на ПК и keengen на Keenetic. Полный текст — в README репозитория.</p>
+      <h1><a class="brand-link" href="index.html" title="На главную"><span class="logo" aria-hidden="true">📖</span><span data-i18n="howtoTitle">Как пользоваться</span></a></h1>
+      <p class="sub" data-i18n="howtoLead">Два режима: keengen на ПК и keengen на Keenetic. Полный текст — в README репозитория.</p>
+    </div>
+    <div class="clockbox" title="Местное время" data-i18n-title="clockTitle">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring" cx="50" cy="50" r="44" id="secring" stroke-dasharray="276.46" stroke-dashoffset="276.46"/>
+        <circle class="face" cx="50" cy="50" r="40"/>
+        <g id="ticks"></g>
+        <line class="hand hh" id="hh" x1="50" y1="50" x2="50" y2="28"/>
+        <line class="hand mm" id="mm" x1="50" y1="50" x2="50" y2="17"/>
+        <line class="hand ss" id="ss" x1="50" y1="56" x2="50" y2="13"/>
+        <circle class="pin" cx="50" cy="50" r="3"/>
+      </svg>
+      <div class="digi">
+        <div class="t" id="ct">--:--:--</div>
+        <div class="d" id="cd">&nbsp;</div>
+        <div class="z" data-i18n="clockz">местное время</div>
+      </div>
     </div>
   </div>
-  <section class="card">
+  <div class="chipbar">
+  <div class="chips">
+    <button type="button" class="chip" id="themeBtn" title="Сменить тему оформления" data-i18n-title="tipTheme">🎨 тема</button>
+    <a class="chip on" href="howto.html" data-i18n="howto" title="Краткая инструкция по работе с keengen" data-i18n-title="tipHowto">📖 как пользоваться</a>
+    <a class="chip" href="index.html" data-i18n="homeChip" title="На главную" data-i18n-title="tipHome">🏠 На главную</a>
+    <button type="button" class="chip" id="langBtn" title="Язык">🌐 RU</button>
+  </div>
+  </div>
+
+  <section class="card" data-lang="ru">
     <ol class="howto">
       <li>Вставьте share-ссылки <code>vless://</code> / <code>hy2://</code> (не <code>https://</code> подписку).</li>
       <li>«Прочитать ссылки». Radio слева — какой тег пойдёт в <code>05_routing.json</code>.</li>
       <li>«Скачать все файлы разом» → ZIP в <code>/opt/etc/xray/configs/</code> и restart XKeen — либо «Залить» с ПК / с Keenetic.</li>
       <li><strong>keengen на ПК:</strong> <code>start.bat</code> / <code>python3 start.py</code> → <code>http://127.0.0.1:8765/</code> — SSH, бэкапы, установка и снятие IPK.</li>
       <li><strong>keengen на Keenetic:</strong> IPK с GitHub Releases → <code>http://&lt;router&gt;:1001/</code> рядом с XKeen-UI на <code>:1000</code>. Restore / «Удалить IPK» — только с ПК.</li>
+      <li><strong>Обновления:</strong> при открытии и обновлении страницы (F5) keengen <em>проверяет</em> latest на GitHub и показывает строку версий / кнопку «Обновить IPK…». Автоматически пакет <strong>не ставится</strong> — нужен клик по кнопке.</li>
     </ol>
     <h2 id="вход-пароль-или-ssh-ключ">Вход: пароль или SSH-ключ</h2>
     <p>К роутеру по SSH — <strong>логин + пароль</strong> или <strong>логин + SSH-ключ</strong>. Это Entware SSH (Dropbear), не пароль веб-UI KeeneticOS.</p>
@@ -34,7 +61,26 @@
       <li>Пустой пароль без <code>KEENGEN_SSH_KEY</code> = ошибка входа.</li>
     </ol>
     <p>Подробнее в репозитории: <code>docs/howto.md</code> (раздел «Вход: пароль или SSH-ключ»).</p>
-    <p><a class="chip" href="index.html">← к генератору</a></p>
+  </section>
+
+  <section class="card" data-lang="en" hidden>
+    <ol class="howto">
+      <li>Paste share links <code>vless://</code> / <code>hy2://</code> (not an <code>https://</code> subscription).</li>
+      <li>“Read links”. The radio on the left picks which tag goes into <code>05_routing.json</code>.</li>
+      <li>“Download all files” → ZIP into <code>/opt/etc/xray/configs/</code> and restart XKeen — or “Write” from PC / Keenetic.</li>
+      <li><strong>keengen on PC:</strong> <code>start.bat</code> / <code>python3 start.py</code> → <code>http://127.0.0.1:8765/</code> — SSH, backups, install and remove IPK.</li>
+      <li><strong>keengen on Keenetic:</strong> IPK from GitHub Releases → <code>http://&lt;router&gt;:1001/</code> next to XKeen-UI on <code>:1000</code>. Restore / “Remove IPK” — PC only.</li>
+      <li><strong>Updates:</strong> on open and page refresh (F5) keengen <em>checks</em> GitHub latest and shows the version line / “Update IPK…” button. It does <strong>not</strong> auto-install — you must click the button.</li>
+    </ol>
+    <h2 id="login-password-or-ssh-key">Login: password or SSH key</h2>
+    <p>SSH to the router uses <strong>login + password</strong> or <strong>login + SSH key</strong>. That is Entware SSH (Dropbear), not the KeeneticOS web UI password.</p>
+    <ol class="howto">
+      <li><strong>Usual path:</strong> in “Login settings” — login (often <code>root</code>), Entware password, port (often <code>22</code>) → “Save”. You do not need <code>KEENGEN_SSH_KEY</code>.</li>
+      <li><strong>Key:</strong> if you prefer no password in the form, or the router already uses key login — leave the password <em>empty</em>, and on the PC set env <code>KEENGEN_SSH_KEY</code> to the full path of the <strong>private</strong> key.</li>
+      <li><strong>Windows:</strong> <code>ssh-keygen -t ed25519 -f %USERPROFILE%\.ssh\keengen_ed25519</code> → put <code>*.pub</code> into <code>authorized_keys</code> on the router (typical Entware Dropbear: <code>/opt/etc/dropbear/authorized_keys</code>; OpenSSH: <code>~/.ssh/authorized_keys</code>) → <code>set KEENGEN_SSH_KEY=%USERPROFILE%\.ssh\keengen_ed25519</code> before <code>start.py</code>.</li>
+      <li>Empty password without <code>KEENGEN_SSH_KEY</code> = login error.</li>
+    </ol>
+    <p>More in the repo: <code>docs/howto.md</code> (section “Login: password or SSH key”).</p>
   </section>
 </body>
 </html>

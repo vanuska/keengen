@@ -1,6 +1,6 @@
 # keengen IPK (Entware)
 
-Пакет **0.1.0-3** для `mipsel-3.4`: статика + `keengen-httpd` (ветка **`main`**).
+Пакет **0.1.1-1** для `mipsel-3.4`: статика + `keengen-httpd` (ветка **`main`**).
 
 Подробности: [docs/ipk.md](../docs/ipk.md). Исходник helper: [src/](src/).
 
@@ -14,6 +14,6 @@ cd ../../..
 bash ipk/scripts/build-ipk.sh
 ```
 
-Артефакт: `dist/keengen_0.1.0-3_mipsel-3.4.ipk` (в git не кладётся). Сборка снимает CRLF со всех текстовых файлов в stage.
+Артефакт: `dist/keengen_0.1.1-1_mipsel-3.4.ipk` (в git не кладётся). Сборка снимает CRLF со всех текстовых файлов в stage.
 
 На роутер ставить только по явному приказу (шаг 2).

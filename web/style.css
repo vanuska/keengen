@@ -1,6 +1,9 @@
 /* keengen extras on top of doctor THEME_CSS+STYLE (kb/24). */
 .hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
-.hrow .sub{margin-bottom:0}
+.hrow .sub{margin-bottom:22px}
+.brand-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:12px}
+.brand-link:hover{color:inherit}
+.chip.on{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 45%,var(--glassb))}
 .clockbox{display:flex;align-items:center;gap:12px;background:var(--glass);
 border:1px solid var(--glassb);border-radius:18px;padding:8px 16px 8px 8px;
 backdrop-filter:blur(24px);box-shadow:var(--shadow)}
@@ -132,7 +135,46 @@ box-shadow:var(--shadow);backdrop-filter:blur(24px);padding:20px 22px;max-width:
 padding:12px;border:1px solid var(--glassb);border-radius:14px;background:var(--glass)}
 .keenetic-badge{font-size:13px;font-weight:650;color:var(--ink2)}
 .keenetic-badge.lan{color:var(--ok)}
+.keenetic-badge.need{color:#c22a20}
 .keenetic-badge.away{color:var(--warn)}
+html[data-theme=dark] .keenetic-badge.need,
+html[data-theme=ocean] .keenetic-badge.need,
+html[data-theme=forest] .keenetic-badge.need,
+html[data-theme=purple] .keenetic-badge.need,
+html[data-theme=sunset] .keenetic-badge.need,
+html[data-theme=neon] .keenetic-badge.need{color:#ff6961}
+#authKeenetic.auth-ok{
+border-color:rgba(48,209,88,.75);
+box-shadow:0 0 0 1.5px rgba(48,209,88,.35),0 0 10px rgba(48,209,88,.22);
+animation:auth-shimmer-green 2.6s ease-in-out infinite}
+#authKeenetic.auth-need{
+border-color:rgba(255,69,58,.7);
+box-shadow:0 0 0 1.5px rgba(255,69,58,.32),0 0 10px rgba(255,69,58,.18);
+animation:auth-shimmer-red 2.6s ease-in-out infinite}
+#authKeenetic:disabled,#authKeenetic.auth-muted{
+animation:none;border-color:var(--glassb);box-shadow:none;opacity:.55}
+#installIpk.ipk-update{
+border:1px solid rgba(10,200,255,.55);
+box-shadow:0 0 0 1.5px rgba(10,180,255,.35),0 0 12px rgba(0,200,255,.28),
+ 0 4px 14px rgba(0,100,224,.35),inset 0 1px 0 rgba(255,255,255,.3);
+animation:auth-shimmer-update 2.4s ease-in-out infinite}
+@keyframes auth-shimmer-green{
+0%,100%{box-shadow:0 0 0 1.5px rgba(48,209,88,.32),0 0 8px rgba(48,209,88,.18);border-color:rgba(48,209,88,.55)}
+50%{box-shadow:0 0 0 2px rgba(48,209,88,.7),0 0 14px rgba(48,209,88,.38);border-color:rgba(52,199,89,.95)}
+}
+@keyframes auth-shimmer-red{
+0%,100%{box-shadow:0 0 0 1.5px rgba(255,69,58,.28),0 0 8px rgba(255,69,58,.14);border-color:rgba(255,69,58,.5)}
+50%{box-shadow:0 0 0 2px rgba(255,69,58,.65),0 0 14px rgba(255,69,58,.32);border-color:rgba(255,99,90,.9)}
+}
+@keyframes auth-shimmer-update{
+0%,100%{box-shadow:0 0 0 1.5px rgba(10,180,255,.3),0 0 10px rgba(0,200,255,.22),
+ 0 4px 14px rgba(0,100,224,.35),inset 0 1px 0 rgba(255,255,255,.3);filter:brightness(1)}
+50%{box-shadow:0 0 0 2.5px rgba(0,229,255,.55),0 0 16px rgba(0,200,255,.4),
+ 0 6px 18px rgba(0,100,224,.45),inset 0 1px 0 rgba(255,255,255,.35);filter:brightness(1.06)}
+}
+@media (prefers-reduced-motion:reduce){
+ #authKeenetic.auth-ok,#authKeenetic.auth-need,#installIpk.ipk-update{animation:none}
+}
 .modal-auth{max-width:440px}
 .modal-auth label{margin-top:12px;display:block}
 .modal-auth input,.modal-auth select{width:100%;box-sizing:border-box}

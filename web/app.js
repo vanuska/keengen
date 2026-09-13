@@ -319,8 +319,12 @@
   function updateAuthButton() {
     const btn = document.getElementById("authKeenetic");
     if (!btn) return;
+    const ready = !!authGet();
     btn.disabled = !!localEntware;
     btn.title = localEntware ? t("tipAuthPcOnly") : t("tipAuthBtn");
+    btn.classList.toggle("auth-ok", !localEntware && ready);
+    btn.classList.toggle("auth-need", !localEntware && !ready);
+    btn.classList.toggle("auth-muted", !!localEntware);
   }
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
@@ -1430,10 +1434,12 @@
       else btn.title = t("tipReadBtn");
     }
     if (where) {
+      const needAuth = keeneticLan && !ready && !localEntware;
       where.classList.toggle("lan", keeneticLan && (ready || localEntware));
-      where.classList.toggle("away", !keeneticLan || (!ready && !localEntware));
+      where.classList.toggle("need", needAuth);
+      where.classList.toggle("away", !keeneticLan);
       if (!keeneticLan) where.textContent = awayHint(hint);
-      else if (!ready && !localEntware) where.textContent = t("whereNeedSave");
+      else if (needAuth) where.textContent = t("whereNeedSave");
       else if (localEntware) where.textContent = t("whereOk", "local");
       else where.textContent = t("whereOk", authGet().name || authGet().host);
     }
@@ -1596,6 +1602,7 @@
         ipkInfo = null;
         if (verLine) verLine.textContent = "";
         ipkBtn.textContent = t("ipkBtn");
+        ipkBtn.classList.remove("ipk-update");
         updateBakButtons();
         return;
       }
@@ -1604,16 +1611,19 @@
       if (j.router_version) extra += t("ipkVerRouter", j.router_version);
       if (j.app_update && !localEntware) extra += t("ipkAppUpdate");
       if (verLine) verLine.textContent = t("ipkVer", j.local_version || "?", j.latest_version || "?", extra);
-      if (j.router_installed && j.ipk_update) {
+      var needUpdate = !!(j.router_installed && j.ipk_update);
+      if (needUpdate) {
         ipkBtn.textContent = t("ipkBtnUpdate", j.latest_version || "");
       } else if (j.router_installed && !j.ipk_update) {
         ipkBtn.textContent = t("ipkUpToDate", j.latest_version || j.router_version || "");
       } else {
         ipkBtn.textContent = t("ipkBtn");
       }
+      ipkBtn.classList.toggle("ipk-update", needUpdate);
       updateBakButtons();
     }).catch(function () {
       ipkInfo = null;
+      ipkBtn.classList.remove("ipk-update");
       updateBakButtons();
     });
   }

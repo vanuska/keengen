@@ -16,6 +16,10 @@ var KG_I18N={
   howto:'📖 как пользоваться',clockz:'местное время',clockTitle:'Местное время',
   themeChip:'🎨 тема',
   langTitle:'Язык',
+  homeChip:'🏠 На главную',tipHome:'На главную',
+  howtoTitle:'Как пользоваться',
+  howtoLead:'Два режима: keengen на ПК и keengen на Keenetic. Полный текст — в README репозитория.',
+  howtoPageTitle:'Как пользоваться · keengen',
   h1:'1. Ссылки и файлы',
   infoTip:'Подсказка',
   note1:'«Прочитать с Keenetic» сразу показывает подключения в секции 2. Активное в таблице пишется в 05_routing. «Залить» / правый клик по вкладке — запись на роутер после входа. «Прочитать ссылки» — только поле ниже.',
@@ -146,7 +150,7 @@ var KG_I18N={
   tipApplyAllBtn:'записать файлы на роутер и перезапустить XKeen',
   tipTheme:'Сменить тему оформления',
   tipHowto:'Краткая инструкция по работе с keengen',
-  whereNeedSave:'сохраните вход — проверка SSH',
+  whereNeedSave:'вход не настроен — сохраните',
   whereOk:'вход «{0}» проверен',
   needFields:'нужны название, адрес, порт и логин',
   probing:'проверяю SSH…',
@@ -163,6 +167,10 @@ var KG_I18N={
   howto:'📖 how to use',clockz:'local time',clockTitle:'Local time',
   themeChip:'🎨 theme',
   langTitle:'Language',
+  homeChip:'🏠 Home',tipHome:'Home',
+  howtoTitle:'How to use',
+  howtoLead:'Two modes: keengen on PC and keengen on Keenetic. Full text is in the repository README.',
+  howtoPageTitle:'How to use · keengen',
   h1:'1. Links and files',
   infoTip:'Info',
   note1:'“Read from Keenetic” fills connections in section 2. The active row is written to 05_routing. “Write” / right-click a tab uploads after login. “Read links” only fills the box below.',
@@ -293,7 +301,7 @@ var KG_I18N={
   tipApplyAllBtn:'write files to the router and restart XKeen',
   tipTheme:'Change the UI theme',
   tipHowto:'Short guide to using keengen',
-  whereNeedSave:'save login — SSH probe',
+  whereNeedSave:'login not set — save first',
   whereOk:'login “{0}” probed',
   needFields:'need name, address, port and login',
   probing:'probing SSH…',
@@ -314,7 +322,8 @@ function kgT(k){
 function kgLocale(){return window.__kgLang==='en'?'en-GB':'ru-RU';}
 function kgApplyLang(){
  document.documentElement.lang=window.__kgLang;
- document.title=kgT('pageTitle');
+ var onHowto=!!document.body&&document.body.classList.contains('howto-page');
+ document.title=kgT(onHowto?'howtoPageTitle':'pageTitle');
  document.querySelectorAll('[data-i18n]').forEach(function(el){
   var k=el.getAttribute('data-i18n');if(k)el.textContent=kgT(k);});
  document.querySelectorAll('[data-i18n-title]').forEach(function(el){
@@ -323,6 +332,8 @@ function kgApplyLang(){
   var k=el.getAttribute('data-i18n-aria');if(k)el.setAttribute('aria-label',kgT(k));});
  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
   var k=el.getAttribute('data-i18n-placeholder');if(k)el.placeholder=kgT(k);});
+ document.querySelectorAll('[data-lang]').forEach(function(el){
+  el.hidden=el.getAttribute('data-lang')!==window.__kgLang;});
  var lb=document.getElementById('langBtn');
  if(lb){lb.textContent=window.__kgLang==='en'?'🌐 EN':'🌐 RU';lb.title=kgT('langTitle');}
  docFillMenu();docApplyTheme(true);
@@ -387,7 +398,8 @@ function docSetTheme(t){window.__docMode=t;
   d.innerHTML=L.map(function(x){return '<button type=button class="titem'
    +(x[0]===window.__docMode?' on':'')+'" data-t="'+x[0]+'"><span class=tk></span>'
    +x[1]+'<span class=td>'+x[2]+'</span></button>';}).join('');
-  document.body.appendChild(d);
+  var host=tb.closest('.chips')||document.body;
+  host.appendChild(d);
   d.addEventListener('click',function(e){
    var b=e.target.closest('.titem');if(b)docSetTheme(b.dataset.t);});
  }
