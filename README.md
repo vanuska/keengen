@@ -1,6 +1,6 @@
 # Что это
 
-Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, мёрджа конфигов и заливки их на для Keenetic.
+Кроссплатформенный автономный генератор конфигов **XKeen / Xray** с функцией чтения, мёрджа конфигов и заливки их на Keenetic.
 
 Crosspatform `vless://`, `hy2://`, … generator, reader and uploader for **Keenetic** [XKeen-UI](https://github.com/zxc-rv/XKeen-UI). Runs in the browser or as `python3 start.py` on Windows / Linux / macOS.
 
