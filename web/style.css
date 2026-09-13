@@ -97,6 +97,7 @@ box-shadow:0 4px 14px rgba(0,100,224,.35)}
 .ipk-title{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .ipk-log{margin:10px 0 0;max-height:220px;font-size:11px}
 .ipk-log[hidden]{display:none !important}
+#ipkErr{margin:8px 0 0}
 .tab-menu{position:fixed;z-index:90;min-width:200px;padding:6px;
 background:var(--glass);border:1px solid var(--glassb);border-radius:12px;
 box-shadow:var(--shadow);backdrop-filter:blur(24px)}

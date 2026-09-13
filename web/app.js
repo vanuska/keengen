@@ -1705,6 +1705,12 @@
     const ipkBtn = document.getElementById("installIpk");
     const ipkStatus = document.getElementById("ipkStatus");
     const ipkLog = document.getElementById("ipkLog");
+    const ipkErr = document.getElementById("ipkErr");
+    function showIpkErr(msg) {
+      if (!ipkErr) return;
+      ipkErr.textContent = msg || "";
+      ipkErr.hidden = !msg;
+    }
     if (!ipkBtn) return;
     ipkBtn.addEventListener("click", function () {
       if (ipkBtn.disabled) return;
@@ -1712,13 +1718,15 @@
       if (!localEntware) {
         if (!auth || !keeneticLan) return;
         if (String(auth.user || "").toLowerCase() !== "root") {
-          showErr(t("ipkNeedRoot"));
+          showErr("");
+          showIpkErr(t("ipkNeedRoot"));
           return;
         }
       }
       if (!window.confirm(t("ipkConfirm"))) return;
       ipkBtn.disabled = true;
       showErr("");
+      showIpkErr("");
       if (ipkStatus) ipkStatus.textContent = t("ipkBusy");
       if (ipkLog) {
         ipkLog.hidden = true;
@@ -1765,10 +1773,10 @@
             ? t("ipkFailStep", fail.step, detail ? ": " + detail : "")
             : (j.error || ("HTTP " + x.r.status));
           if (ipkStatus) ipkStatus.textContent = stepBit;
-          showErr(steps ? t("ipkFailLog") : t("ipkFail", j.error || ("HTTP " + x.r.status)));
+          showIpkErr(steps ? t("ipkFailLog") : t("ipkFail", j.error || ("HTTP " + x.r.status)));
           return;
         }
-        showErr("");
+        showIpkErr("");
         if (ipkLog) {
           ipkLog.hidden = true;
           ipkLog.textContent = "";
@@ -1791,7 +1799,7 @@
         }
         var msg = e && e.message ? e.message : e;
         if (ipkStatus) ipkStatus.textContent = t("ipkFail", msg);
-        showErr(t("ipkFail", msg));
+        showIpkErr(t("ipkFail", msg));
       }).finally(function () {
         setKeeneticButton(keeneticLan, null);
       });
