@@ -62,7 +62,10 @@ rm -f "$OUT"
 )
 
 echo "built $OUT"
-ls -la "$OUT"
+# Stable name for releases/latest/download/keengen_mipsel-3.4.ipk
+STABLE="$DIST/keengen_mipsel-3.4.ipk"
+cp -f "$OUT" "$STABLE"
+ls -la "$OUT" "$STABLE"
 file "$OUT" 2>/dev/null || true
 file "$STAGE/data/opt/sbin/keengen-httpd" 2>/dev/null || true
 python3 -c "d=open(r'''$OUT''','rb').read(2); assert d==b'\\x1f\\x8b', d"

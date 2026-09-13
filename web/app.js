@@ -1202,6 +1202,8 @@
   });
 
   var keeneticLan = false;
+  var localEntware = false;
+  var ipkInfo = null;
   var AUTH_STORE = "keengen.k.profiles";
   var AUTH_ACTIVE = "keengen.k.active";
   var WORK_STORE = "keengen.k.work";
@@ -1410,30 +1412,75 @@
     const ready = !!authGet();
     const btn = document.getElementById("readKeenetic");
     const where = document.getElementById("keeneticWhere");
-    const ipkBtn = document.getElementById("installIpk");
     if (btn) {
-      btn.disabled = !keeneticLan || !ready;
+      btn.disabled = !keeneticLan || (!ready && !localEntware);
       if (!keeneticLan) btn.title = t("titleAway");
-      else if (!ready) btn.title = t("titleNeedAuth");
+      else if (!ready && !localEntware) btn.title = t("titleNeedAuth");
       else btn.title = t("titleRead");
     }
-    if (ipkBtn) {
-      const auth = authGet();
-      const isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
-      ipkBtn.disabled = !keeneticLan || !ready || !isRoot;
-      if (!keeneticLan) ipkBtn.title = t("titleAway");
-      else if (!ready) ipkBtn.title = t("titleNeedAuth");
-      else if (!isRoot) ipkBtn.title = t("ipkNeedRoot");
-      else ipkBtn.title = t("ipkBtn");
-    }
     if (where) {
-      where.classList.toggle("lan", keeneticLan && ready);
-      where.classList.toggle("away", !keeneticLan || !ready);
+      where.classList.toggle("lan", keeneticLan && (ready || localEntware));
+      where.classList.toggle("away", !keeneticLan || (!ready && !localEntware));
       if (!keeneticLan) where.textContent = awayHint(hint);
-      else if (!ready) where.textContent = t("whereNeedSave");
+      else if (!ready && !localEntware) where.textContent = t("whereNeedSave");
+      else if (localEntware) where.textContent = t("whereOk", "local");
       else where.textContent = t("whereOk", authGet().name || authGet().host);
     }
     setCopyEnabled();
+    refreshIpkPanel();
+  }
+
+  function refreshIpkPanel() {
+    const ipkBtn = document.getElementById("installIpk");
+    const verLine = document.getElementById("ipkVerLine");
+    if (!ipkBtn) return;
+    const auth = authGet();
+    const isRoot = !!(auth && String(auth.user || "").toLowerCase() === "root");
+    const enable = localEntware ? !!keeneticLan : (!!keeneticLan && !!auth && isRoot);
+    ipkBtn.disabled = !enable;
+    if (!keeneticLan) ipkBtn.title = t("titleAway");
+    else if (!localEntware && !auth) ipkBtn.title = t("titleNeedAuth");
+    else if (!localEntware && !isRoot) ipkBtn.title = t("ipkNeedRoot");
+    else ipkBtn.title = t("ipkBtn");
+
+    var req;
+    if (localEntware) {
+      req = fetch("/api/update/check", { cache: "no-store" });
+    } else if (auth && isRoot) {
+      req = fetch("/api/update/check", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: auth.host,
+          port: parseInt(auth.port, 10) || 22,
+          user: auth.user,
+          password: auth.password || "",
+        }),
+      });
+    } else {
+      req = fetch("/api/update/check", { cache: "no-store" });
+    }
+
+    req.then(function (r) { return r.json(); }).then(function (j) {
+      ipkInfo = j || null;
+      if (!j || !j.ok) {
+        if (verLine) verLine.textContent = "";
+        ipkBtn.textContent = t("ipkBtn");
+        return;
+      }
+      var extra = "";
+      if (j.router_version) extra += t("ipkVerRouter", j.router_version);
+      if (j.app_update && !localEntware) extra += t("ipkAppUpdate");
+      if (verLine) verLine.textContent = t("ipkVer", j.local_version || "?", j.latest_version || "?", extra);
+      if (j.router_installed && j.ipk_update) {
+        ipkBtn.textContent = t("ipkBtnUpdate", j.latest_version || "");
+      } else if (j.router_installed && !j.ipk_update) {
+        ipkBtn.textContent = t("ipkUpToDate", j.latest_version || j.router_version || "");
+      } else {
+        ipkBtn.textContent = t("ipkBtn");
+      }
+    }).catch(function () { /* ignore */ });
   }
   function saveAuthForm() {
     const f = readAuthForm();
@@ -1501,7 +1548,11 @@
   }
 
   migrateProfiles();
-  fetch("/api/keenetic/where", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+  fetch("/api/health", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (h) {
+    localEntware = !!(h && (h.service === "keengen-entware" || h.mode === "local"));
+  }).catch(function () { localEntware = false; }).then(function () {
+    return fetch("/api/keenetic/where", { cache: "no-store" }).then(function (r) { return r.json(); });
+  }).then(function (j) {
     setKeeneticButton(j && j.where === "lan", j && j.hint);
   }).catch(function () {
     setKeeneticButton(false, t("notHome"));
@@ -1517,10 +1568,12 @@
     ipkBtn.addEventListener("click", function () {
       if (ipkBtn.disabled) return;
       const auth = authGet();
-      if (!auth || !keeneticLan) return;
-      if (String(auth.user || "").toLowerCase() !== "root") {
-        showErr(t("ipkNeedRoot"));
-        return;
+      if (!localEntware) {
+        if (!auth || !keeneticLan) return;
+        if (String(auth.user || "").toLowerCase() !== "root") {
+          showErr(t("ipkNeedRoot"));
+          return;
+        }
       }
       if (!window.confirm(t("ipkConfirm"))) return;
       ipkBtn.disabled = true;
@@ -1529,16 +1582,17 @@
         ipkLog.hidden = true;
         ipkLog.textContent = "";
       }
+      const payload = localEntware ? {} : {
+        host: auth.host,
+        port: parseInt(auth.port, 10) || 22,
+        user: auth.user,
+        password: auth.password || "",
+      };
       fetch("/api/keenetic/install-ipk", {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          host: auth.host,
-          port: parseInt(auth.port, 10) || 22,
-          user: auth.user,
-          password: auth.password || "",
-        }),
+        body: JSON.stringify(payload),
       }).then(function (r) {
         return r.json().then(function (j) { return { r: r, j: j }; }).catch(function () {
           return { r: r, j: {} };
@@ -1558,7 +1612,11 @@
           return;
         }
         showErr("");
-        if (ipkStatus) ipkStatus.textContent = t("ipkOk", j.ui || ("http://" + auth.host + ":1001/"));
+        const ver = j.installed_version || (ipkInfo && ipkInfo.latest_version) || "";
+        if (ipkStatus) {
+          ipkStatus.textContent = t("ipkOk", ver, j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/"));
+        }
+        refreshIpkPanel();
       }).catch(function (e) {
         showErr(t("ipkFail", e && e.message ? e.message : e));
         if (ipkStatus) ipkStatus.textContent = "";

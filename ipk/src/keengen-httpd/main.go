@@ -64,10 +64,12 @@ func main() {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", handleHealth)
+	mux.HandleFunc("/api/update/check", handleUpdateCheck)
 	mux.HandleFunc("/api/keenetic/where", handleWhere)
 	mux.HandleFunc("/api/keenetic/probe", handleProbe)
 	mux.HandleFunc("/api/keenetic/read", handleRead)
 	mux.HandleFunc("/api/keenetic/write", handleWrite)
+	mux.HandleFunc("/api/keenetic/install-ipk", handleInstallIpkLocal)
 	mux.HandleFunc("/", handleStatic)
 
 	addr := *bind + ":" + *port
@@ -114,7 +116,9 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 405, map[string]any{"ok": false, "error": "method"})
 		return
 	}
-	writeJSON(w, 200, map[string]any{"ok": true, "service": "keengen-entware", "mode": "local"})
+	writeJSON(w, 200, map[string]any{
+		"ok": true, "service": "keengen-entware", "mode": "local", "version": appVersion,
+	})
 }
 
 func handleWhere(w http.ResponseWriter, r *http.Request) {

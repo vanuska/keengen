@@ -40,11 +40,137 @@ WRITE_LIMIT = 262144
 AUTH_LIMIT = 4096
 FILE_LIMIT = 120000
 INSTALL_LIMIT = 8192
-IPK_NAME = "keengen_0.1.0-1_mipsel-3.4.ipk"
-IPK_URL = (
-    "https://github.com/vanuska/keengen/releases/download/v0.1.0/" + IPK_NAME
-)
 INSTALL_TIMEOUT = 120
+GITHUB_REPO = "vanuska/keengen"
+# Stable name on each Release (also versioned keengen_X.Y.Z-1_mipsel-3.4.ipk).
+IPK_ASSET_STABLE = "keengen_mipsel-3.4.ipk"
+
+
+def app_version() -> str:
+    for path in (HERE / "VERSION", HERE.parent / "VERSION"):
+        try:
+            v = path.read_text(encoding="utf-8").strip().splitlines()[0].strip()
+            if v:
+                return v
+        except OSError:
+            continue
+    return "0.0.0"
+
+
+def _http_json(url: str, timeout: int = 20) -> dict:
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "keengen/%s" % app_version(),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
+        raise RuntimeError("github-failed:%s" % exc) from exc
+
+
+def resolve_latest_release() -> dict:
+    """Return {tag, version, ipk_url, ipk_name} for latest GitHub Release."""
+    data = _http_json("https://api.github.com/repos/%s/releases/latest" % GITHUB_REPO)
+    tag = str(data.get("tag_name") or "").strip()
+    version = tag[1:] if tag.startswith("v") else tag
+    assets = data.get("assets") if isinstance(data.get("assets"), list) else []
+    stable = None
+    versioned = None
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        name = str(asset.get("name") or "")
+        url = str(asset.get("browser_download_url") or "")
+        if not name or not url:
+            continue
+        if name == IPK_ASSET_STABLE:
+            stable = (name, url)
+        if name.startswith("keengen_") and name.endswith("_mipsel-3.4.ipk"):
+            versioned = (name, url)
+    chosen = stable or versioned
+    if not chosen:
+        raise RuntimeError("no-ipk-asset")
+    return {
+        "tag": tag,
+        "version": version or app_version(),
+        "ipk_name": chosen[0],
+        "ipk_url": chosen[1],
+    }
+
+
+def check_updates(auth: dict | None = None) -> dict:
+    local = app_version()
+    try:
+        latest = resolve_latest_release()
+    except RuntimeError as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "local_version": local,
+            "service": "keengen",
+        }
+    remote_ver = latest["version"]
+    out = {
+        "ok": True,
+        "service": "keengen",
+        "local_version": local,
+        "latest_version": remote_ver,
+        "latest_tag": latest["tag"],
+        "ipk_url": latest["ipk_url"],
+        "ipk_name": latest["ipk_name"],
+        "app_update": _ver_tuple(remote_ver) > _ver_tuple(local),
+        "router_version": None,
+        "router_installed": False,
+        "ipk_update": False,
+    }
+    if auth:
+        code, body, _err = ssh_exec(
+            auth,
+            "wget -q -O - http://127.0.0.1:1001/api/health 2>/dev/null || "
+            "opkg list-installed keengen 2>/dev/null",
+            timeout=15,
+        )
+        text = body.decode("utf-8", "replace").strip()
+        if code == 0 and text:
+            out["router_installed"] = True
+            try:
+                hj = json.loads(text)
+                rv = str(hj.get("version") or "").strip()
+                if rv:
+                    out["router_version"] = rv
+            except json.JSONDecodeError:
+                # opkg list-installed: "keengen - 0.1.0-1"
+                if "keengen" in text:
+                    parts = text.replace("-", " ").split()
+                    for p in parts:
+                        if p[0:1].isdigit():
+                            out["router_version"] = p.split("-")[0]
+                            break
+            rv = out.get("router_version") or "0"
+            out["ipk_update"] = _ver_tuple(remote_ver) > _ver_tuple(rv)
+    return out
+
+
+def _ver_tuple(v: str) -> tuple:
+    parts: list[int] = []
+    for chunk in str(v).strip().split("."):
+        num = ""
+        for ch in chunk:
+            if ch.isdigit():
+                num += ch
+            else:
+                break
+        parts.append(int(num) if num else 0)
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts[:4])
 
 
 def _private_host(host: str) -> bool:
@@ -251,10 +377,22 @@ def collect(auth: dict) -> dict:
 
 
 def install_ipk(auth: dict) -> dict:
-    """Download Entware IPK from GitHub Release and install via opkg (needs root)."""
+    """Download latest Entware IPK from GitHub Release and install via opkg (needs root)."""
     steps: list[dict] = []
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    ipk_path = "/tmp/%s" % IPK_NAME
+    try:
+        latest = resolve_latest_release()
+    except RuntimeError as exc:
+        return {"ok": False, "error": str(exc), "steps": steps}
+    ipk_url = latest["ipk_url"]
+    ipk_name = latest["ipk_name"]
+    ipk_path = "/tmp/%s" % ipk_name.replace("'", "")
+    steps.append({
+        "step": "resolve-latest",
+        "ok": True,
+        "code": 0,
+        "detail": "%s %s" % (latest.get("tag"), ipk_url),
+    })
 
     def step(name: str, cmd: str, timeout: int = 40) -> tuple[int, str]:
         code, out, err = ssh_exec(auth, cmd, timeout=timeout)
@@ -286,7 +424,7 @@ def install_ipk(auth: dict) -> dict:
 
     code, _ = step(
         "download",
-        "wget -O '%s' '%s'" % (ipk_path, IPK_URL),
+        "wget -O '%s' '%s'" % (ipk_path, ipk_url),
         timeout=INSTALL_TIMEOUT,
     )
     if code != 0:
@@ -327,9 +465,10 @@ def install_ipk(auth: dict) -> dict:
             "steps": steps,
             "backup": bdir,
             "ui": "http://%s:1001/" % auth["host"],
+            "installed_version": latest["version"],
         }
 
-    print("install-ipk ok host=%s backup=%s" % (auth["host"], bdir), file=sys.stderr, flush=True)
+    print("install-ipk ok host=%s ver=%s" % (auth["host"], latest["version"]), file=sys.stderr, flush=True)
     return {
         "ok": True,
         "where": "lan",
@@ -337,6 +476,8 @@ def install_ipk(auth: dict) -> dict:
         "user": auth["user"],
         "backup": bdir,
         "ui": "http://%s:1001/" % auth["host"],
+        "installed_version": latest["version"],
+        "latest_tag": latest["tag"],
         "steps": steps,
     }
 
@@ -404,7 +545,18 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True, "where": "lan"})
             return
         if path == "/api/health":
-            self._send_json(200, {"ok": True, "service": "keengen"})
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "service": "keengen",
+                    "version": app_version(),
+                    "mode": "ssh",
+                },
+            )
+            return
+        if path == "/api/update/check":
+            self._send_json(200, check_updates(None))
             return
         if path.startswith("/api/"):
             self._send_json(404, {"ok": False, "error": "not-found"})
@@ -481,6 +633,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._ssh_error(exc)
             except Exception:
                 self._send_json(502, {"ok": False, "error": "install-failed"})
+            return
+        if path == "/api/update/check":
+            try:
+                auth = None
+                if body.get("host"):
+                    auth = parse_auth(body)
+                self._send_json(200, check_updates(auth))
+            except ValueError:
+                self._send_json(400, {"ok": False, "error": "bad-auth"})
+            except RuntimeError as exc:
+                self._ssh_error(exc)
+            except Exception:
+                self._send_json(502, {"ok": False, "error": "check-failed"})
             return
         self._send_json(404, {"ok": False, "error": "not-found"})
 

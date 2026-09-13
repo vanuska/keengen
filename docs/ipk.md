@@ -48,7 +48,7 @@ Entware (bin.entware.net) ждёт **gzip(tar)** с членами
 **Уже в SSH (Dropbear)** — одна строка, без `scp` с ПК (Release [v0.1.0](https://github.com/vanuska/keengen/releases/tag/v0.1.0); тег релиза должен быть и на Gitea — иначе push-mirror сотрёт GitHub-only tag):
 
 ```sh
-wget -O /tmp/keengen_0.1.0-1_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/download/v0.1.0/keengen_0.1.0-1_mipsel-3.4.ipk" && opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
+wget -O /tmp/keengen_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" && opkg install /tmp/keengen_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
 ```
 
 **С ПК через scp:**

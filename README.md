@@ -192,12 +192,14 @@ XKeen-UI не заменяется и остаётся на **:1000**. SSH с П
 
 ### Из локального UI (рекомендуется)
 
-1. На ПК: `python start.py` → откроется helper.
-2. «Настройка входа» → логин **root**, LAN-IP роутера, порт **22** → Сохранить (probe SSH).
-3. Кнопка **«Установить IPK на роутер»** — бэкап → wget с GitHub Release → `opkg install` → `S99keengen start`.
-4. Откройте `http://<LAN-IP>:1001/`.
+1. На ПК: `python start.py` / `start.bat` → helper.
+2. «Настройка входа» → логин **root**, LAN-IP, порт **22** → Сохранить.
+3. Кнопка **«Установить IPK…»** / **«Обновить IPK до …»** — всегда качает **GitHub latest** (не зашитый 0.1.0), бэкап → `opkg` → `:1001`.
+4. Строка версий: локальный helper · GitHub · версия на роутере (если уже стоит).
+5. На UI роутера (`:1001`) та же кнопка обновляет пакет без SSH.
 
-Для повседневного «Прочитать / Залить» конфигов можно снова сохранить вход как пользователь `keengen` (не root). Установка IPK — только под **root**.
+Стабильное имя ассета: `keengen_mipsel-3.4.ipk`  
+(`…/releases/latest/download/keengen_mipsel-3.4.ipk`). Версия приложения = файл [`VERSION`](VERSION) + тег Release.
 
 ### Установка с ПК (scp)
 
@@ -217,7 +219,7 @@ opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk
 Если вы **уже** в сессии root по Dropbear Entware (порт **22**) — без `scp` с ПК: скопируйте одну строку, вставьте в терминал роутера.
 
 ```sh
-wget -O /tmp/keengen_0.1.0-1_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/download/v0.1.0/keengen_0.1.0-1_mipsel-3.4.ipk" && opkg install /tmp/keengen_0.1.0-1_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
+wget -O /tmp/keengen_mipsel-3.4.ipk "https://github.com/vanuska/keengen/releases/latest/download/keengen_mipsel-3.4.ipk" && opkg install /tmp/keengen_mipsel-3.4.ipk && /opt/etc/init.d/S99keengen start
 ```
 
 Подсказка с LAN-IP (опционально):

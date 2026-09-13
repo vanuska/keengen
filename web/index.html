@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>keengen · конфиги Keenetic / XKeen</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233aa0ff'/%3E%3Cstop offset='1' stop-color='%230064e0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='58' font-size='52' text-anchor='middle' fill='%23fff' font-family='system-ui,sans-serif' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
-  <script src="theme.js?v=2"></script>
+  <script src="theme.js?v=4"></script>
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
@@ -53,7 +53,8 @@
       </div>
       <div class="ipk-install" id="ipkInstallBox">
         <h3 class="ipk-title" data-i18n="ipkTitle">Установить keengen на Keenetic (Entware)</h3>
-        <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»). Кнопка сделает бэкап конфигов, скачает .ipk с GitHub, поставит через opkg и запустит UI на порту 1001. XKeen-UI на :1000 не трогается. Конфиги XKeen этой кнопкой не заливаются.</p>
+        <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»), если helper на ПК. Кнопка берёт latest с GitHub, делает бэкап, ставит/обновляет IPK и UI на :1001. XKeen-UI на :1000 не трогается.</p>
+        <p class="preview-hint" id="ipkVerLine"></p>
         <div class="actions">
           <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn">Установить IPK на роутер</button>
           <span class="backup-status" id="ipkStatus"></span>
@@ -167,6 +168,6 @@
 
   <script src="jsQR.min.js"></script>
   <script src="xray-outbounds.js?v=1"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
