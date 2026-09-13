@@ -1,0 +1,8 @@
+Package: keengen
+Version: 0.1.0-1
+Depends:
+Section: net
+Architecture: mipsel-3.4
+Maintainer: keengen contributors
+Source: https://github.com/vanuska/keengen
+Description: XKeen config generator UI for Keenetic Entware (port 1001). Bundles static web + mipsel keengen-httpd (local read/write API). Not a replacement for XKeen-UI. Do not expose to WAN.

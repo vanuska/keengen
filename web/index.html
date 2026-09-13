@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>keengen · конфиги Keenetic / XKeen</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%233aa0ff'/%3E%3Cstop offset='1' stop-color='%230064e0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='58' font-size='52' text-anchor='middle' fill='%23fff' font-family='system-ui,sans-serif' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
-  <script src="theme.js?v=1"></script>
+  <script src="theme.js?v=4"></script>
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div class="blob b1"></div><div class="blob b2"></div>
@@ -51,6 +51,30 @@
         <button type="button" class="btn primary" id="readKeenetic" disabled data-i18n="readBtn">Прочитать с Keenetic</button>
         <span class="keenetic-badge" id="keeneticWhere" data-i18n="whereWait">Проверяю, дома ли вы…</span>
       </div>
+      <div class="ipk-install" id="ipkInstallBox">
+        <h3 class="ipk-title" data-i18n="ipkTitle">Установить keengen на Keenetic (Entware)</h3>
+        <p class="preview-hint" data-i18n="ipkHint">Нужен SSH под root (в «Настройка входа»), если keengen на ПК. Кнопка берёт latest с GitHub, делает бэкап, ставит/обновляет IPK и UI keengen на Keenetic (:1001). XKeen-UI на :1000 не трогается.</p>
+        <p class="preview-hint" id="ipkVerLine"></p>
+        <div class="actions">
+          <button type="button" class="btn primary" id="installIpk" disabled data-i18n="ipkBtn">Установить IPK на роутер</button>
+          <span class="backup-status" id="ipkStatus"></span>
+        </div>
+        <pre class="ipk-log" id="ipkLog" hidden></pre>
+        <p class="preview-hint" id="bakNotice"></p>
+        <div class="ipk-restore" id="ipkRestoreBox">
+          <h3 class="ipk-title" data-i18n="bakTitle">Локальные бэкапы (на ПК)</h3>
+          <p class="preview-hint" data-i18n="bakHint">Бэкап конфигов делается всегда при «Прочитать» и при установке IPK. Слепки лежат в backups/ на этом ПК. Restore — только с ПК под root SSH.</p>
+          <label for="backupPick" data-i18n="bakPick">Слепок</label>
+          <select id="backupPick"></select>
+          <div class="actions" style="margin-top:10px">
+            <button type="button" class="btn ghost" id="bakRefresh" data-i18n="bakRefresh">Обновить список</button>
+            <button type="button" class="btn primary" id="bakRestoreCfg" disabled data-i18n="bakRestoreCfg">Restore конфиги</button>
+            <button type="button" class="btn ghost" id="bakRestoreIpk" disabled data-i18n="bakRestoreIpk">Restore IPK</button>
+            <button type="button" class="btn ghost" id="bakRemoveIpk" disabled data-i18n="bakRemoveIpk">Удалить IPK</button>
+          </div>
+          <span class="backup-status" id="bakStatus"></span>
+        </div>
+      </div>
       <label for="links" data-i18n="linksLbl">Вставьте ссылки или JSON вкладки, затем «Прочитать ссылки». Проверка в этот момент: битое не попадает, живые 03/04/05 не затираются.</label>
       <textarea id="links" placeholder="vless://…#vpn-reality&#10;vless://…#vpn-tls&#10;hy2://…#vpn-hy2"></textarea>
       <div class="drop" id="drop" tabindex="0">
@@ -89,7 +113,7 @@
     <div class="tabs" id="tabs"></div>
     <pre id="preview">{}</pre>
   </section>
-  <p class="footer" data-i18n="footer">keengen · конфиги для XKeen-UI · SSH только через локальный helper</p>
+  <p class="footer" data-i18n="footer">keengen · конфиги для XKeen-UI · SSH только через keengen на ПК</p>
 
   <div id="tabMenu" class="tab-menu" hidden aria-hidden="true">
     <button type="button" data-act="copy" data-i18n="tabCopy">Скопировать в буфер</button>
@@ -158,6 +182,6 @@
 
   <script src="jsQR.min.js"></script>
   <script src="xray-outbounds.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
