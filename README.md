@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/tour-v2.gif" width="520" alt="Обзор интерфейса keengen">
+  <img src="docs/screenshots/tour-v3.gif" width="520" alt="Обзор интерфейса keengen">
 </p>
 
 ---
