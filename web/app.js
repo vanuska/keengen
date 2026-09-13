@@ -302,14 +302,25 @@
     const hasFiles = !!state.files;
     const ready = (typeof authGet === "function" && !!authGet()) || !!localEntware;
     const backup = document.getElementById("backup");
-    if (backup) backup.disabled = !hasFiles;
+    if (backup) {
+      backup.disabled = !hasFiles;
+      backup.title = hasFiles ? t("tipBackupBtn") : t("tipNeedFiles");
+    }
     const applyAll = document.getElementById("applyAll");
     if (applyAll) {
       applyAll.disabled = !hasFiles || !keeneticLan || !ready;
-      applyAll.title = (!keeneticLan || !ready)
-        ? t("needSsh")
-        : t("tipApplyAllBtn");
+      if (!hasFiles) applyAll.title = t("tipNeedFiles");
+      else if (!keeneticLan) applyAll.title = t("titleAway");
+      else if (!ready) applyAll.title = t("titleNeedAuth");
+      else applyAll.title = t("tipApplyAllBtn");
     }
+  }
+
+  function updateAuthButton() {
+    const btn = document.getElementById("authKeenetic");
+    if (!btn) return;
+    btn.disabled = !!localEntware;
+    btn.title = localEntware ? t("tipAuthPcOnly") : t("tipAuthBtn");
   }
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
@@ -1411,6 +1422,7 @@
     const ready = !!authGet();
     const btn = document.getElementById("readKeenetic");
     const where = document.getElementById("keeneticWhere");
+    updateAuthButton();
     if (btn) {
       btn.disabled = !keeneticLan || (!ready && !localEntware);
       if (!keeneticLan) btn.title = t("titleAway");
@@ -1481,16 +1493,28 @@
     var remBtn = document.getElementById("bakRemoveIpk");
     if (cfgBtn) {
       cfgBtn.disabled = !keeneticLan || !isRoot || !(item && item.configs);
-      cfgBtn.title = !isRoot ? t("bakNeedRoot") : t("tipBakRestoreCfg");
+      if (!keeneticLan) cfgBtn.title = t("titleAway");
+      else if (!auth) cfgBtn.title = t("titleNeedAuth");
+      else if (!isRoot) cfgBtn.title = t("bakNeedRoot");
+      else if (!item) cfgBtn.title = t("bakNeedSnap");
+      else if (!item.configs) cfgBtn.title = t("bakNeedSnapCfg");
+      else cfgBtn.title = t("tipBakRestoreCfg");
     }
     if (ipkBtn) {
       ipkBtn.disabled = !keeneticLan || !isRoot || !(item && (item.previous_ipk || item.ipk));
-      ipkBtn.title = !isRoot ? t("bakNeedRoot") : t("tipBakRestoreIpk");
+      if (!keeneticLan) ipkBtn.title = t("titleAway");
+      else if (!auth) ipkBtn.title = t("titleNeedAuth");
+      else if (!isRoot) ipkBtn.title = t("bakNeedRoot");
+      else if (!item) ipkBtn.title = t("bakNeedSnap");
+      else if (!(item.previous_ipk || item.ipk)) ipkBtn.title = t("bakNeedSnapIpk");
+      else ipkBtn.title = t("tipBakRestoreIpk");
     }
     if (remBtn) {
       remBtn.hidden = false;
       remBtn.disabled = !keeneticLan || !isRoot || !(ipkInfo && ipkInfo.router_installed);
-      if (!isRoot) remBtn.title = t("bakNeedRoot");
+      if (!keeneticLan) remBtn.title = t("titleAway");
+      else if (!auth) remBtn.title = t("titleNeedAuth");
+      else if (!isRoot) remBtn.title = t("bakNeedRoot");
       else if (!(ipkInfo && ipkInfo.router_installed)) remBtn.title = t("bakNeedPkg");
       else remBtn.title = t("tipBakRemoveIpk");
     }
@@ -1670,7 +1694,11 @@
     setKeeneticButton(false, t("notHome"));
     refreshBackupList();
   });
-  document.getElementById("authKeenetic").addEventListener("click", showAuthDlg);
+  document.getElementById("authKeenetic").addEventListener("click", function () {
+    var btn = document.getElementById("authKeenetic");
+    if (!btn || btn.disabled) return;
+    showAuthDlg();
+  });
   document.getElementById("authCancel").addEventListener("click", hideAuthDlg);
   document.getElementById("authSave").addEventListener("click", saveAuthForm);
   (function () {
