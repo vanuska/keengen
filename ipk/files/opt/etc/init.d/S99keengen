@@ -1,10 +1,10 @@
 #!/bin/sh
-# Entware init: S99keengen — static UI only (scaffold).
+# Entware init: S99keengen — static UI + local API (mipsel binary).
 ENABLED=yes
-PROCS=httpd
-DESC="keengen static UI"
+DESC="keengen Entware UI"
 
 CONF=/opt/etc/keengen/keengen.conf
+BIN=/opt/sbin/keengen-httpd
 PID=/opt/var/run/keengen-httpd.pid
 
 [ -f "$CONF" ] && . "$CONF"
@@ -13,23 +13,31 @@ KEENGEN_PORT=${KEENGEN_PORT:-1001}
 KEENGEN_WWW=${KEENGEN_WWW:-/opt/share/keengen/www}
 
 start() {
+	if [ ! -x "$BIN" ]; then
+		echo "keengen: missing $BIN" >&2
+		return 1
+	fi
 	if [ ! -d "$KEENGEN_WWW" ]; then
 		echo "keengen: missing $KEENGEN_WWW" >&2
 		return 1
 	fi
-	if ! command -v httpd >/dev/null 2>&1; then
-		echo "keengen: busybox httpd not found; install busybox or replace with helper binary" >&2
-		return 1
-	fi
 	mkdir -p /opt/var/run
-	# busybox httpd: -p [ADDR:]PORT -h DOCROOT -f foreground avoided
-	httpd -p "${KEENGEN_BIND}:${KEENGEN_PORT}" -h "$KEENGEN_WWW" -r "keengen"
+	if [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null; then
+		echo "keengen: already running"
+		return 0
+	fi
+	KEENGEN_BIND="$KEENGEN_BIND" KEENGEN_PORT="$KEENGEN_PORT" KEENGEN_WWW="$KEENGEN_WWW" \
+		"$BIN" -bind "$KEENGEN_BIND" -port "$KEENGEN_PORT" -www "$KEENGEN_WWW" >/opt/var/log/keengen.log 2>&1 &
+	echo $! >"$PID"
 	echo "keengen UI http://${KEENGEN_BIND}:${KEENGEN_PORT}/"
 }
 
 stop() {
-	# best-effort: kill httpd whose cwd/docroot is ours (scaffold)
-	killall httpd 2>/dev/null || true
+	if [ -f "$PID" ]; then
+		kill "$(cat "$PID")" 2>/dev/null || true
+		rm -f "$PID"
+	fi
+	killall keengen-httpd 2>/dev/null || true
 }
 
 case "$1" in

@@ -1,11 +1,12 @@
+dist/
+*.ipk
+ipk/files/opt/sbin/keengen-httpd
 __pycache__/
 *.pyc
 .venv/
 venv/
 out/
-dist/
 *.zip
-*.ipk
 .DS_Store
 .idea/
 AGENT/
