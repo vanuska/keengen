@@ -1718,6 +1718,7 @@
       }
       if (!window.confirm(t("ipkConfirm"))) return;
       ipkBtn.disabled = true;
+      showErr("");
       if (ipkStatus) ipkStatus.textContent = t("ipkBusy");
       if (ipkLog) {
         ipkLog.hidden = true;
@@ -1740,31 +1741,57 @@
         });
       }).then(function (x) {
         const j = x.j || {};
-        if (ipkLog && j.steps && j.steps.length) {
+        const steps = j.steps && j.steps.length ? j.steps : null;
+        function paintIpkLog() {
+          if (!ipkLog || !steps) return;
           ipkLog.hidden = false;
-          ipkLog.textContent = j.steps.map(function (s) {
+          ipkLog.textContent = steps.map(function (s) {
             return (s.ok ? "[ok] " : "[fail] ") + s.step + (s.detail ? "\n" + s.detail : "");
           }).join("\n\n");
         }
+        function lastFailStep() {
+          if (!steps) return null;
+          for (var i = steps.length - 1; i >= 0; i--) {
+            if (!steps[i].ok) return steps[i];
+          }
+          return null;
+        }
         if (!x.r.ok || !j.ok) {
-          const err = j.error || ("HTTP " + x.r.status);
-          if (ipkStatus) ipkStatus.textContent = "";
-          showErr(t("ipkFail", err));
+          paintIpkLog();
+          var fail = lastFailStep();
+          var detail = fail && fail.detail ? String(fail.detail).replace(/\s+/g, " ").trim() : "";
+          if (detail.length > 120) detail = detail.slice(0, 117) + "…";
+          var stepBit = fail && fail.step
+            ? t("ipkFailStep", fail.step, detail ? ": " + detail : "")
+            : (j.error || ("HTTP " + x.r.status));
+          if (ipkStatus) ipkStatus.textContent = stepBit;
+          showErr(steps ? t("ipkFailLog") : t("ipkFail", j.error || ("HTTP " + x.r.status)));
           return;
         }
         showErr("");
+        if (ipkLog) {
+          ipkLog.hidden = true;
+          ipkLog.textContent = "";
+        }
         const ver = j.installed_version || (ipkInfo && ipkInfo.latest_version) || "";
+        var uiUrl = j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/");
         var bakStamp = backupStampFrom(j);
+        try { window.open(uiUrl, "_blank"); } catch (eOpen) { /* ignore popup block */ }
         if (ipkStatus) {
-          var okMsg = t("ipkOk", ver, j.ui || ("http://" + (auth && auth.host ? auth.host : "127.0.0.1") + ":1001/"));
+          var okMsg = ver ? t("ipkOkOpen", ver) : t("ipkOk", ver, uiUrl);
           ipkStatus.textContent = bakStamp ? (okMsg + " · " + t("bakMadeShort", bakStamp)) : okMsg;
         }
         if (bakStamp) showBakNotice(bakStamp);
         refreshIpkPanel();
         refreshBackupList();
       }).catch(function (e) {
-        showErr(t("ipkFail", e && e.message ? e.message : e));
-        if (ipkStatus) ipkStatus.textContent = "";
+        if (ipkLog) {
+          ipkLog.hidden = true;
+          ipkLog.textContent = "";
+        }
+        var msg = e && e.message ? e.message : e;
+        if (ipkStatus) ipkStatus.textContent = t("ipkFail", msg);
+        showErr(t("ipkFail", msg));
       }).finally(function () {
         setKeeneticButton(keeneticLan, null);
       });
