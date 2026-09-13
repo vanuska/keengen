@@ -11,7 +11,7 @@ DIST="$ROOT/dist"
 STAGE="$DIST/stage"
 BIN_SRC="$IPK/files/opt/sbin/keengen-httpd"
 PKG_NAME=keengen
-PKG_VER=0.1.1-1
+PKG_VER=0.1.2-1
 ARCH=mipsel-3.4
 OUT="$DIST/${PKG_NAME}_${PKG_VER}_${ARCH}.ipk"
 

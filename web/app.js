@@ -1434,14 +1434,12 @@
       else btn.title = t("tipReadBtn");
     }
     if (where) {
-      const needAuth = keeneticLan && !ready && !localEntware;
-      where.classList.toggle("lan", keeneticLan && (ready || localEntware));
-      where.classList.toggle("need", needAuth);
+      where.classList.toggle("lan", false);
+      where.classList.toggle("need", false);
       where.classList.toggle("away", !keeneticLan);
+      // Auth OK/need = green/red shimmer on «Настройка входа» only.
       if (!keeneticLan) where.textContent = awayHint(hint);
-      else if (needAuth) where.textContent = t("whereNeedSave");
-      else if (localEntware) where.textContent = t("whereOk", "local");
-      else where.textContent = t("whereOk", authGet().name || authGet().host);
+      else where.textContent = "";
     }
     setCopyEnabled();
     refreshIpkPanel();
@@ -1749,12 +1747,32 @@
       }
       var uiWin = null;
       try { uiWin = window.open("about:blank", "_blank"); } catch (eOpenPre) { uiWin = null; }
+      function paintUiWin(msg) {
+        if (!uiWin || uiWin.closed) return false;
+        try {
+          var safe = String(msg || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>keengen</title>" +
+            "<style>html,body{margin:0;height:100%;font:15px/1.45 system-ui,sans-serif;background:#eef2f7;color:#1a2332}" +
+            ".box{display:flex;align-items:center;justify-content:center;min-height:100%;padding:24px;text-align:center}</style></head>" +
+            "<body><div class=\"box\"><p>" + safe + "</p></div></body></html>";
+          uiWin.document.open();
+          uiWin.document.write(html);
+          uiWin.document.close();
+          return true;
+        } catch (ePaint) {
+          return false;
+        }
+      }
       function closeUiWin() {
         if (uiWin && !uiWin.closed) {
           try { uiWin.close(); } catch (eClose) { /* ignore */ }
         }
         uiWin = null;
       }
+      function failUiWin() {
+        if (!paintUiWin(t("ipkUiFail"))) closeUiWin();
+      }
+      paintUiWin(t("ipkUiLoading"));
       const payload = localEntware ? {} : {
         host: auth.host,
         port: parseInt(auth.port, 10) || 22,
@@ -1788,7 +1806,7 @@
           return null;
         }
         if (!x.r.ok || !j.ok) {
-          closeUiWin();
+          failUiWin();
           paintIpkLog();
           var fail = lastFailStep();
           var detail = fail && fail.detail ? String(fail.detail).replace(/\s+/g, " ").trim() : "";
@@ -1836,7 +1854,7 @@
         refreshIpkPanel();
         refreshBackupList();
       }).catch(function (e) {
-        closeUiWin();
+        failUiWin();
         if (ipkLog) {
           ipkLog.hidden = true;
           ipkLog.textContent = "";
