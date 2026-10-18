@@ -465,7 +465,8 @@
         '<td><input type="radio" name="proxy"></td>' +
         '<td><input type="text" data-i="' + i + '"></td>' +
         "<td>" + (ep.address || "—") + (ep.port ? ":" + ep.port : "") + "</td>" +
-        "<td>" + proto + (sni ? " · " + sni : "") + "</td>";
+        "<td>" + proto + (sni ? " · " + sni : "") + "</td>" +
+        '<td><button type="button" class="btn del-btn" data-i="' + i + '" title="' + t("delBtn") + '" aria-label="' + t("delBtn") + '">' + t("delIcon") + '</button></td>';
       tr.querySelector('input[type="radio"]').checked = s.tag === state.proxy;
       tr.querySelector('input[type="radio"]').addEventListener("change", function () {
         state.proxy = s.tag;
@@ -480,6 +481,13 @@
         s.tag = next;
         tagInp.value = next;
         if (state.proxy === old) state.proxy = next;
+        rebuild();
+      });
+      const delBtn = tr.querySelector("button.del-btn");
+      delBtn.addEventListener("click", function () {
+        if (!window.confirm(t("delConfirm", s.tag))) return;
+        state.servers.splice(i, 1);
+        if (state.proxy === s.tag) state.proxy = null;
         rebuild();
       });
       tbody.appendChild(tr);
