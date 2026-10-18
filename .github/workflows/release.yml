@@ -1,0 +1,33 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+jobs:
+  release:
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build IPK
+        run: |
+          bash ipk/scripts/build-ipk.sh
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Upload only the .ipk files created by the build script.
+          # In a clean checkout, dist/ should only contain the fresh artifacts.
+          FILES=$(find dist -maxdepth 1 -name 'keengen*.ipk' -print | sort)
+          if [ -z "$FILES" ]; then
+            echo "No IPK artifacts found in dist/" >&2
+            exit 1
+          fi
+          echo "Uploading:"
+          echo "$FILES"
+          gh release create "$GITHUB_REF_NAME" $FILES \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag
