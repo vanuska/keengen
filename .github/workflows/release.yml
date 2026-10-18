@@ -16,10 +16,11 @@ jobs:
         with:
           go-version: 'stable'
       - name: Cross-compile keengen-httpd (mipsel)
+        working-directory: ./ipk/src/keengen-httpd
         run: |
           GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
             go build -trimpath -ldflags='-s -w' \
-            -o ipk/files/opt/sbin/keengen-httpd ./ipk/src/keengen-httpd
+            -o ../../files/opt/sbin/keengen-httpd .
       - name: Build IPK
         run: |
           bash ipk/scripts/build-ipk.sh
