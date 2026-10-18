@@ -12,3 +12,5 @@ out/
 .idea/
 AGENT/
 AGENTS.md
+.serena/
+ipk/src/keengen-httpd/keengen-httpd
